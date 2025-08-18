@@ -1,5 +1,7 @@
-import { createClient } from '@/src/lib/supabase-server';
-import { getClinicId } from '@/src/lib/get-clinic';
+import { createClient } from '@/src/lib/supabase-server'
+import { getCurrentClinicId } from '@/src/lib/get-clinic'
+import { createClient } from '@/lib/supabase-server'
+import { getCurrentClinicId } from '@/lib/get-clinic'
 
 export default async function AgendaPage() {
   const supabase = createClient();
