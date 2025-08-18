@@ -1,10 +1,5 @@
-import AppNav from '@/components/AppNav';
+import AppShell from '@/components/AppShell';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <AppNav />
-      <main className="mx-auto max-w-5xl p-6">{children}</main>
-    </>
-  );
+  return <AppShell>{children}</AppShell>;
 }
