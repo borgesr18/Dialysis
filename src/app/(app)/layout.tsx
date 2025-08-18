@@ -1,6 +1,10 @@
-// src/app/(app)/layout.tsx
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  // O CSS global é importado em src/app/layout.tsx (root)
-  return <>{children}</>;
-}
+import AppNav from '@/components/AppNav';
 
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <AppNav />
+      <main className="mx-auto max-w-5xl p-6">{children}</main>
+    </>
+  );
+}
