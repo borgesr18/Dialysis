@@ -3,3 +3,10 @@
 @tailwind utilities;
 
 html, body, #__next { height: 100%; }
+
+@layer utilities {
+  .card { @apply border rounded-xl p-4 bg-white shadow-sm; }
+  .btn  { @apply rounded-xl px-4 py-2 bg-black text-white hover:opacity-90 disabled:opacity-60; }
+  .input{ @apply border rounded-md px-3 py-2 w-full; }
+  .label{ @apply text-sm text-neutral-700; }
+}
