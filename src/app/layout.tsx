@@ -1,12 +1,11 @@
-import './styles/globals.css';
-import type { ReactNode } from 'react';
+export const metadata = { title: 'Hemodiálise', description: 'MVP' };
 
-export const metadata = { title: 'Hemodiálise — MVP' };
+import './globals.css';
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body className="min-h-screen bg-neutral-50 text-neutral-900">{children}</body>
     </html>
   );
 }
