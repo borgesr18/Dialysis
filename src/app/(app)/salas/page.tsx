@@ -1,16 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 
-async function createSala(fd: FormData) {
-  'use server';
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
-  await supabase.from('salas').insert({
-    clinica_id,
-    nome: String(fd.get('nome') || ''),
-    descricao: String(fd.get('descricao') || ''),
-  });
-}
 
 export default async function SalasPage() {
   const supabase = createClient();
@@ -24,13 +14,20 @@ export default async function SalasPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Salas</h1>
-
-      <form action={createSala} className="card grid gap-2 md:grid-cols-3">
-        <input className="input" name="nome" placeholder="Nome da sala" required />
-        <input className="input md:col-span-2" name="descricao" placeholder="Descrição" />
-        <button className="btn md:col-start-3">Salvar</button>
-      </form>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Salas</h1>
+        <div className="flex items-center gap-2">
+          <button className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-neutral-700 hover:bg-neutral-50">
+            Filtrar
+          </button>
+          <a
+            href="/salas/new"
+            className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
+          >
+            Nova
+          </a>
+        </div>
+      </div>
 
       <div className="grid gap-2">
         {(salas ?? []).map((s) => (
