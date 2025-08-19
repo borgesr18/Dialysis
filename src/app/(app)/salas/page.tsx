@@ -29,16 +29,36 @@ export default async function SalasPage() {
         </div>
       </div>
 
-      <div className="grid gap-2">
-        {(salas ?? []).map((s) => (
-          <div key={s.id} className="card">
-            <div className="font-medium">{s.nome}</div>
-            <div className="text-sm text-neutral-600">{s.descricao ?? '—'}</div>
-          </div>
-        ))}
-        {(!salas || salas.length === 0) && (
-          <div className="text-sm text-neutral-500">Nenhuma sala cadastrada.</div>
-        )}
+      <div className="rounded-xl border border-neutral-200 bg-white overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="text-left text-neutral-600">
+              <th className="px-4 py-3">Nome</th>
+              <th className="px-4 py-3">Descrição</th>
+              <th className="px-4 py-3">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(salas ?? []).map((s) => (
+              <tr key={s.id} className="border-t">
+                <td className="px-4 py-3">{s.nome}</td>
+                <td className="px-4 py-3">{s.descricao ?? '—'}</td>
+                <td className="px-4 py-3">
+                  <a href={`/salas/${s.id}/edit`} className="text-primary-700 hover:underline">
+                    Editar
+                  </a>
+                </td>
+              </tr>
+            ))}
+            {(!salas || salas.length === 0) && (
+              <tr>
+                <td className="px-4 py-6 text-neutral-600" colSpan={3}>
+                  Nenhuma sala cadastrada.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
