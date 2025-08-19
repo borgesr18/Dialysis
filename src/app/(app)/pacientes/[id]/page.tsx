@@ -16,6 +16,15 @@ type Paciente = {
   updated_at: string;
 };
 
+// Add the missing Documento type
+type Documento = {
+  id: string;
+  storage_path: string;
+  tipo: string | null;
+  created_at: string;
+  url: string | null;
+};
+
 export default async function PacienteDetalhePage({
   params,
 }: {
