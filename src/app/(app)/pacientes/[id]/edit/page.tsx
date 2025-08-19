@@ -1,12 +1,18 @@
+import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
+import { getCurrentClinicId } from '@/lib/get-clinic';
 import PacienteForm from '../../_form';
 import { updatePaciente } from '../../_actions';
-import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function EditPacientePage({ params }: { params: { id: string } }) {
+  const clinicaId = await getCurrentClinicId();
+  if (!clinicaId) redirect('/onboarding');
+
   const supabase = createClient();
+
+  // Busca o paciente; o RLS do Supabase já restringe por clínica.
   const { data, error } = await supabase
     .from('pacientes')
     .select('id, registro, nome_completo, cidade_nome, alerta_texto')
@@ -38,3 +44,4 @@ export default async function EditPacientePage({ params }: { params: { id: strin
     </div>
   );
 }
+
