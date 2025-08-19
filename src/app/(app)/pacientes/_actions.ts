@@ -12,7 +12,11 @@ function reqString(fd: FormData, name: string) {
 export async function createPaciente(fd: FormData) {
   const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
-  if (!clinica_id) throw new Error('Sem vínculo de clínica.');
+
+  // Sem vínculo -> vai pro onboarding
+  if (!clinica_id) {
+    redirect('/onboarding');
+  }
 
   const registro = reqString(fd, 'registro');
   const nome = reqString(fd, 'nome_completo');
@@ -37,7 +41,7 @@ export async function updatePaciente(id: string, fd: FormData) {
   const nome = reqString(fd, 'nome_completo');
   if (!nome) throw new Error('Nome é obrigatório.');
 
-  const payload: any = {
+  const payload: Record<string, any> = {
     registro: reqString(fd, 'registro') || null,
     nome_completo: nome,
     cidade_nome: reqString(fd, 'cidade_nome') || null,
