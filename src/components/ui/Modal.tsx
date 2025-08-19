@@ -10,7 +10,7 @@ interface ModalProps {
   children: React.ReactNode;
   title?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
-  variant?: 'default' | 'medical' | 'danger' | 'success' | 'warning';
+  variant?: 'default' | 'medical' | 'danger' | 'success' | 'warning' | 'info'; // Add 'info' here
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
@@ -136,6 +136,7 @@ interface ConfirmationModalProps {
   loading?: boolean;
 }
 
+// In the ConfirmationModal component, add variant mapping:
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
   onClose,
@@ -161,12 +162,20 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     success: 'medical' as const
   };
   
+  // Map ConfirmationModal variants to Modal variants
+  const modalVariantMap = {
+    danger: 'danger' as const,
+    warning: 'warning' as const,
+    info: 'default' as const, // Map 'info' to 'default' or add 'info' to Modal
+    success: 'success' as const
+  };
+  
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       size="sm"
-      variant={variant}
+      variant={modalVariantMap[variant]}
       closeOnOverlayClick={!loading}
       closeOnEscape={!loading}
     >
