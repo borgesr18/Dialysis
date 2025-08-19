@@ -23,7 +23,9 @@ async function deleteMaquina(id: string) {
 
 
 
-export default async function MaquinasPage() {
+type SearchParams = { ok?: string; error?: string };
+
+export default async function MaquinasPage({ searchParams }: { searchParams?: SearchParams }) {
   const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
 
@@ -58,6 +60,17 @@ export default async function MaquinasPage() {
           </Link>
         </div>
       </div>
+
+      {searchParams?.ok && (
+        <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+          {decodeURIComponent(searchParams.ok)}
+        </div>
+      )}
+      {searchParams?.error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+          {decodeURIComponent(searchParams.error)}
+        </div>
+      )}
 
       <div className="rounded-xl border border-neutral-200 bg-white overflow-x-auto">
         <table className="min-w-full text-sm">
