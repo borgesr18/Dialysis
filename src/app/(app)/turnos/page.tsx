@@ -19,7 +19,9 @@ async function deleteTurno(id: string) {
 }
 
 
-export default async function TurnosPage() {
+type SearchParams = { ok?: string; error?: string };
+
+export default async function TurnosPage({ searchParams }: { searchParams?: SearchParams }) {
   const supabase = createClient();
   const clinicaId = await getCurrentClinicId();
 
@@ -45,6 +47,17 @@ export default async function TurnosPage() {
           </a>
         </div>
       </div>
+
+      {searchParams?.ok && (
+        <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+          {decodeURIComponent(searchParams.ok)}
+        </div>
+      )}
+      {searchParams?.error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+          {decodeURIComponent(searchParams.error)}
+        </div>
+      )}
 
       {error && <p className="text-red-600">Erro ao carregar turnos: {error.message}</p>}
 

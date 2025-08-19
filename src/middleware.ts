@@ -8,12 +8,10 @@ import { createServerClient } from '@supabase/ssr';
  * - Liberar rotas públicas de auth/reset
  */
 export async function middleware(req: NextRequest) {
-  // Base response (onde vamos gravar cookies atualizados)
   const res = NextResponse.next({
     request: { headers: req.headers },
   });
 
-  // Cliente SSR no middleware exige cookies.getAll / cookies.setAll
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -33,14 +31,12 @@ export async function middleware(req: NextRequest) {
 
   const url = req.nextUrl;
 
-  // Rotas públicas de autenticação e recuperação de senha
   const isAuthOrPasswordPage =
     url.pathname.startsWith('/login') ||
     url.pathname.startsWith('/auth') ||
     url.pathname.startsWith('/reset-password') ||
     url.pathname.startsWith('/update-password');
 
-  // Arquivos estáticos e públicos
   const isPublicAsset =
     url.pathname.startsWith('/_next') ||
     url.pathname.startsWith('/api/public') ||
@@ -57,10 +53,8 @@ export async function middleware(req: NextRequest) {
     url.pathname === '/sitemap.xml' ||
     url.pathname === '/icon.svg';
 
-  // Tudo que não for público é privado
   const isPrivateArea = !isAuthOrPasswordPage && !isPublicAsset;
 
-  // Revalida sessão para atualizar cookies (importante no Edge)
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -78,13 +72,26 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(nextUrl);
   }
 
-  // Retorna a response com cookies possivelmente atualizados
+  if (isPrivateArea && user && !url.pathname.startsWith('/onboarding')) {
+    const { data: vinculo } = await supabase
+      .from('usuarios_clinicas')
+      .select('clinica_id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!vinculo?.clinica_id) {
+      const obUrl = new URL('/onboarding', req.url);
+      return NextResponse.redirect(obUrl);
+    }
+  }
+
   return res;
 }
 
 export const config = {
   matcher: [
-    // Evita rodar em assets estáticos e imagens
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };
