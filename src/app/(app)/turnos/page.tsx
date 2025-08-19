@@ -1,4 +1,25 @@
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
+import { getCurrentClinicId } from '@/lib/get-clinic';
+
+async function deleteTurno(id: string) {
+
+  'use server';
+  const supabase = createClient();
+  const clinica_id = await getCurrentClinicId();
+  const { error } = await supabase
+    .from('turnos')
+    .delete()
+    .eq('id', id)
+    .eq('clinica_id', clinica_id);
+  const ok = !error ? 'Turno excluído com sucesso' : '';
+  const err = error ? encodeURIComponent(error.message) : '';
+  const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
+  redirect(`/turnos${params}`);
+}
+
+
+
 import { getCurrentClinicId } from '@/lib/get-clinic';
 
 
@@ -50,9 +71,16 @@ export default async function TurnosPage() {
                 </td>
                 <td className="px-4 py-3">{Array.isArray(t.dias_semana) ? t.dias_semana.join(', ') : '—'}</td>
                 <td className="px-4 py-3">
-                  <a href={`/turnos/${t.id}/edit`} className="text-primary-700 hover:underline">
-                    Editar
-                  </a>
+                  <div className="flex items-center gap-3">
+                    <a href={`/turnos/${t.id}/edit`} className="text-primary-700 hover:underline">
+                      Editar
+                    </a>
+                    <form action={deleteTurno.bind(null, t.id)}>
+                      <button className="text-red-600 hover:underline" type="submit">
+                        Excluir
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
