@@ -1,6 +1,9 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: {
@@ -20,8 +23,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <body className="min-h-screen bg-neutral-50 text-neutral-900 antialiased">
+    <html lang="pt-BR" className="h-full">
+      <body className="${inter.variable} min-h-screen min-h-screen bg-neutral-50 text-neutral-900 antialiased">
         <div className="mx-auto max-w-5xl p-6">{children}</div>
       </body>
     </html>
