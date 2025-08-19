@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { linkExistingUserByEmail, inviteUser, updateRole, removeMember } from './_actions';
+export const runtime = 'nodejs';
+
 
 type SearchParams = { ok?: string; error?: string };
 
@@ -12,7 +14,7 @@ type Member = {
   papel: string;
 };
 
-async function fetchMembers(): Promise<Member[]> {
+async function fetchMembers(hasAdminKey: boolean): Promise<Member[]> {
   const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
   if (!clinica_id) return [];
@@ -31,22 +33,54 @@ async function fetchMembers(): Promise<Member[]> {
     .in('id', ids);
 
   const papelMap = new Map((perfis ?? []).map((p) => [p.id as string, p.papel as string]));
-  const admin = createAdminClient();
   const users: Member[] = [];
-  for (const id of ids) {
-    const { data } = await admin.auth.admin.getUserById(id);
-    users.push({
-      id,
-      email: data.user?.email ?? '(sem e-mail)',
-      papel: papelMap.get(id) ?? 'VISUALIZADOR',
-    });
+
+  if (!hasAdminKey) {
+    for (const id of ids) {
+      users.push({
+        id,
+        email: '(configure SUPABASE_SERVICE_ROLE_KEY para exibir e-mails)',
+        papel: papelMap.get(id) ?? 'VISUALIZADOR',
+      });
+    }
+    return users;
   }
-  return users;
+
+  try {
+    const admin = createAdminClient();
+    for (const id of ids) {
+      try {
+        const { data } = await admin.auth.admin.getUserById(id);
+        users.push({
+          id,
+          email: data.user?.email ?? '(sem e-mail)',
+          papel: papelMap.get(id) ?? 'VISUALIZADOR',
+        });
+      } catch {
+        users.push({
+          id,
+          email: '(erro ao carregar e-mail)',
+          papel: papelMap.get(id) ?? 'VISUALIZADOR',
+        });
+      }
+    }
+    return users;
+  } catch {
+    for (const id of ids) {
+      users.push({
+        id,
+        email: '(erro no Admin API)',
+        papel: papelMap.get(id) ?? 'VISUALIZADOR',
+      });
+    }
+    return users;
+  }
 }
 
 export default async function AdminMembrosPage({ searchParams }: { searchParams?: SearchParams }) {
   await requireAdmin();
-  const members = await fetchMembers();
+  const hasAdminKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const members = await fetchMembers(hasAdminKey);
 
   return (
     <div className="space-y-6">
@@ -62,6 +96,12 @@ export default async function AdminMembrosPage({ searchParams }: { searchParams?
       {searchParams?.error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800">
           {decodeURIComponent(searchParams.error)}
+        </div>
+      )}
+
+      {!hasAdminKey && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
+          Para listar e-mails e enviar convites, configure a variável SUPABASE_SERVICE_ROLE_KEY no ambiente (Vercel).
         </div>
       )}
 
