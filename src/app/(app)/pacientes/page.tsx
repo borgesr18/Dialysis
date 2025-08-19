@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import PacienteForm from './_form';
-import { createPaciente } from './_actions';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 
@@ -42,12 +40,17 @@ export default async function PacientesPage({
     <div className="mx-auto max-w-7xl p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Pacientes</h1>
-        <Link
-          href="/pacientes/new"
-          className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
-        >
-          Novo paciente
-        </Link>
+        <div className="flex items-center gap-2">
+          <button className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-neutral-700 hover:bg-neutral-50">
+            Filtrar
+          </button>
+          <Link
+            href="/pacientes/new"
+            className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
+          >
+            Novo
+          </Link>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -62,11 +65,6 @@ export default async function PacientesPage({
         </div>
       )}
 
-      {/* Criação rápida (opcional) */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-4">
-        <h2 className="mb-3 text-lg font-medium">Cadastro rápido</h2>
-        <PacienteForm action={createPaciente} />
-      </div>
 
       {/* Lista */}
       <div className="rounded-xl border border-neutral-200 bg-white">

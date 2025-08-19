@@ -1,21 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 
-async function createTurno(fd: FormData) {
-  'use server';
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
-  await supabase.from('turnos').insert({
-    clinica_id,
-    nome: String(fd.get('nome') || ''),
-    hora_inicio: String(fd.get('hora_inicio') || '06:00'),
-    hora_fim: String(fd.get('hora_fim') || '10:00'),
-    dias_semana: (String(fd.get('dias') || '') || '')
-      .split(',')
-      .map((s) => s.trim().toUpperCase())
-      .filter(Boolean), // espera enum/text conforme seu schema
-  });
-}
 
 export default async function TurnosPage() {
   const supabase = createClient();
@@ -29,15 +14,20 @@ export default async function TurnosPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Turnos</h1>
-
-      <form action={createTurno} className="card grid gap-2 md:grid-cols-4">
-        <input className="input md:col-span-2" name="nome" placeholder="Nome do turno" required />
-        <input className="input" name="hora_inicio" type="time" defaultValue="06:00" />
-        <input className="input" name="hora_fim" type="time" defaultValue="10:00" />
-        <input className="input md:col-span-4" name="dias" placeholder="Dias (ex.: SEG,QUA,SEX)" />
-        <button className="btn md:col-start-4">Salvar</button>
-      </form>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Turnos</h1>
+        <div className="flex items-center gap-2">
+          <button className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-neutral-700 hover:bg-neutral-50">
+            Filtrar
+          </button>
+          <a
+            href="/turnos/new"
+            className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
+          >
+            Novo
+          </a>
+        </div>
+      </div>
 
       {error && <p className="text-red-600">Erro ao carregar turnos: {error.message}</p>}
 
