@@ -1,48 +1,51 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
-export function middleware(req: NextRequest) {
+const PUBLIC_PATHS = new Set<string>([
+  '/',           // se quiser pública
+  '/login',
+  '/reset-password',
+  '/icon.svg',
+  '/favicon.ico',
+  '/robots.txt',
+  '/sitemap.xml',
+]);
+
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Rotas públicas (ajuste conforme seu projeto)
-  const publicPaths = [
-    '/login',
-    '/icon.svg',
-    '/favicon.ico',
-    '/robots.txt',
-    '/sitemap.xml',
-  ];
-  if (publicPaths.some((p) => pathname.startsWith(p))) {
+  // permite estáticos e public paths
+  if (PUBLIC_PATHS.has(pathname) || pathname.startsWith('/_next/') || pathname.startsWith('/public/')) {
     return NextResponse.next();
   }
 
-  // Se as envs do Supabase não estão configuradas, não bloqueia
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return NextResponse.next();
-  }
+  // cria cliente SSR com cookies do request
+  const res = NextResponse.next();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: (key) => req.cookies.get(key)?.value,
+        set: (key, value, options) => res.cookies.set({ name: key, value, ...options }),
+        remove: (key, options) => res.cookies.set({ name: key, value: '', ...options, maxAge: 0 }),
+      },
+    }
+  );
 
-  // Checagem simples de auth via cookies do Supabase
-  const access = req.cookies.get('sb-access-token')?.value;
-  const refresh = req.cookies.get('sb-refresh-token')?.value;
-  const isAuthenticated = Boolean(access || refresh);
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!isAuthenticated) {
-    const url = new URL('/login', req.url);
-    url.searchParams.set('redirect', pathname || '/');
+  if (!user) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('redirectedFrom', pathname);
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return res;
 }
 
-// Matcher: protege as áreas logadas do app
 export const config = {
-  matcher: [
-    '/dashboard',
-    '/pacientes/:path*',
-    '/salas/:path*',
-    '/turnos/:path*',
-    '/agenda',
-    '/onboarding',
-  ],
+  matcher: ['/((?!_next|.*\\..*).*)'],
 };
+
