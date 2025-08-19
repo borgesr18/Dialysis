@@ -7,10 +7,10 @@ interface TableProps extends HTMLAttributes<HTMLTableElement> {
 
 const Table = forwardRef<HTMLTableElement, TableProps>(
   ({ className, children, ...props }, ref) => (
-    <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
       <table
         ref={ref}
-        className={clsx('w-full bg-white dark:bg-gray-800', className)}
+        className={clsx('w-full', className)}
         {...props}
       >
         {children}
@@ -27,7 +27,7 @@ const THead = forwardRef<HTMLTableSectionElement, THeadProps>(
   ({ className, children, ...props }, ref) => (
     <thead
       ref={ref}
-      className={clsx('bg-gray-50 dark:bg-gray-700', className)}
+      className={clsx('bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700', className)}
       {...props}
     >
       {children}
@@ -43,7 +43,7 @@ const TBody = forwardRef<HTMLTableSectionElement, TBodyProps>(
   ({ className, children, ...props }, ref) => (
     <tbody
       ref={ref}
-      className={clsx('divide-y divide-gray-200 dark:divide-gray-700', className)}
+      className={clsx('bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700', className)}
       {...props}
     >
       {children}
@@ -59,7 +59,7 @@ const TR = forwardRef<HTMLTableRowElement, TRProps>(
   ({ className, children, ...props }, ref) => (
     <tr
       ref={ref}
-      className={clsx('hover:bg-gray-50 dark:hover:bg-gray-700', className)}
+      className={clsx('hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150', className)}
       {...props}
     >
       {children}
@@ -76,7 +76,7 @@ const TH = forwardRef<HTMLTableCellElement, THProps>(
     <th
       ref={ref}
       className={clsx(
-        'px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400',
+        'px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300',
         className
       )}
       {...props}
@@ -94,7 +94,7 @@ const TD = forwardRef<HTMLTableCellElement, TDProps>(
   ({ className, children, ...props }, ref) => (
     <td
       ref={ref}
-      className={clsx('px-6 py-4 text-sm text-gray-900 dark:text-gray-100', className)}
+      className={clsx('px-6 py-4 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap', className)}
       {...props}
     >
       {children}

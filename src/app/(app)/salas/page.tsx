@@ -7,7 +7,8 @@ import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ToastContainer } from '@/components/ui/Toast';
 import { FormSubmit } from '@/components/ui/FormSubmit';
-import { Building, Filter, Edit, Trash2 } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
+import { Building, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
 
 async function deleteSala(id: string) {
   'use server';
@@ -37,20 +38,30 @@ export default async function SalasPage({ searchParams }: { searchParams?: Searc
     .order('nome');
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <ToastContainer 
         successMessage={searchParams?.ok ? decodeURIComponent(searchParams.ok) : undefined}
         errorMessage={searchParams?.error ? decodeURIComponent(searchParams.error) : undefined}
       />
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Salas</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="md">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+            <Building className="w-8 h-8 mr-3 text-green-500" />
+            Salas
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Gerenciamento de salas de diálise
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <Button variant="outline" size="md" className="border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
             <Filter className="mr-2 h-4 w-4" />
             Filtrar
           </Button>
-          <LinkButton href="/salas/new" variant="primary" size="md">
+          <LinkButton href="/salas/new" className="text-white bg-gradient-medical hover:shadow-glow transition-all duration-200">
+            <Plus className="mr-2 h-4 w-4" />
             Nova Sala
           </LinkButton>
         </div>
@@ -58,73 +69,98 @@ export default async function SalasPage({ searchParams }: { searchParams?: Searc
 
       {/* Lista */}
       {(!salas || salas.length === 0) ? (
-        <EmptyState
-          title="Nenhuma sala encontrada"
-          description="Comece adicionando a primeira sala ao sistema."
-          action={{
-            label: "Adicionar Sala",
-            href: "/salas/new"
-          }}
-          icon={<Building className="h-12 w-12" />}
-        />
+        <Card variant="elevated" className="p-12">
+          <EmptyState
+            title="Nenhuma sala encontrada"
+            description="Comece adicionando a primeira sala ao sistema."
+            action={{
+              label: "Adicionar Sala",
+              href: "/salas/new"
+            }}
+            icon={<Building className="h-12 w-12" />}
+          />
+        </Card>
       ) : (
-        <div className="space-y-4">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {salas.length} sala(s) encontrada(s)
+        <Card variant="elevated" className="overflow-hidden">
+          <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                <Activity className="w-5 h-5 mr-2 text-green-500" />
+                Lista de Salas
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {salas.length} sala(s) encontrada(s)
+              </p>
+            </div>
           </div>
           
-          <Table>
-            <THead>
-              <TR>
-                <TH>Nome</TH>
-                <TH>Descrição</TH>
-                <TH>Ações</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {salas.map((s) => (
-                <TR key={s.id}>
-                  <TD>
-                    <div className="font-medium text-gray-900 dark:text-gray-100">
-                      {s.nome}
-                    </div>
-                  </TD>
-                  <TD>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Sala
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Descrição
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {salas.map((s) => (
+                  <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                          <Building className="w-5 h-5" />
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {s.nome}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {s.descricao ?? '—'}
-                    </div>
-                  </TD>
-                  <TD>
-                    <div className="flex items-center gap-2">
-                      <LinkButton
-                        href={`/salas/${s.id}/edit`}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        <Edit className="mr-1 h-4 w-4" />
-                        Editar
-                      </LinkButton>
-                      <form action={deleteSala.bind(null, s.id)}>
-                        <FormSubmit
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <LinkButton
+                          href={`/salas/${s.id}/edit`}
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => {
-                            if (!confirm('Tem certeza que deseja excluir esta sala?')) {
-                              e.preventDefault();
-                            }
-                          }}
+                          className="hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400"
                         >
-                          <Trash2 className="mr-1 h-4 w-4" />
-                          Excluir
-                        </FormSubmit>
-                      </form>
-                    </div>
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
-        </div>
+                          <Edit className="mr-1 h-4 w-4" />
+                          Editar
+                        </LinkButton>
+                        <form action={deleteSala.bind(null, s.id)}>
+                          <FormSubmit
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+                            onClick={(e) => {
+                              if (!confirm('Tem certeza que deseja excluir esta sala?')) {
+                                e.preventDefault();
+                              }
+                            }}
+                          >
+                            <Trash2 className="mr-1 h-4 w-4" />
+                            Excluir
+                          </FormSubmit>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
     </div>
   );
