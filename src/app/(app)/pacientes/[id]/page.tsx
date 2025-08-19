@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
+import { uploadDocumento, deleteDocumento, listDocumentos } from './documents/_actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,8 @@ export default async function PacienteDetalhePage({
     .eq('id', params.id)
     .eq('clinica_id', clinicaId)
     .maybeSingle();
+
+  const docs = p ? await listDocumentos(p.id) : [];
 
   if (error || !p) {
     return (
@@ -125,11 +128,64 @@ export default async function PacienteDetalhePage({
 
         <aside className="bg-white border rounded-xl p-5">
           <h2 className="text-lg font-semibold mb-3">Documentos</h2>
-          {/* Placeholder até o módulo de uploads (Supabase Storage) */}
-          <input type="file" className="block w-full text-sm" />
-          <p className="mt-2 text-sm text-neutral-500">
-            Upload de documentos do paciente (PDF, imagens).
-          </p>
+
+          <form
+            action={async (fd: FormData) => {
+              'use server';
+              await uploadDocumento(pac.id, fd);
+            }}
+            encType="multipart/form-data"
+            className="space-y-2"
+          >
+            <input name="arquivo" type="file" accept=".pdf,image/jpeg,image/png,image/webp" className="block w-full text-sm" />
+            <button
+              type="submit"
+              className="mt-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+            >
+              Enviar
+            </button>
+            <p className="text-xs text-neutral-500">Máx. 10MB. Tipos: PDF, JPG, PNG, WebP.</p>
+          </form>
+
+          <div className="mt-4 space-y-2">
+            {docs.length === 0 && (
+              <div className="text-sm text-neutral-500">Nenhum documento enviado.</div>
+            )}
+            {docs.map((d: any) => {
+              const name = String(d.storage_path).split('/').slice(-1)[0];
+              return (
+                <div key={d.id} className="flex items-center justify-between gap-2 border rounded-md px-3 py-2">
+                  <div className="truncate text-sm">{name}</div>
+                  <div className="flex items-center gap-2">
+                    {d.url && (
+                      <a
+                        href={d.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm underline"
+                      >
+                        Baixar
+                      </a>
+                    )}
+                    <form
+                      action={async (fd: FormData) => {
+                        'use server';
+                        const docId = String(fd.get('docId') || '');
+                        if (docId) {
+                          await deleteDocumento(docId, pac.id);
+                        }
+                      }}
+                    >
+                      <input type="hidden" name="docId" value={d.id} />
+                      <button className="text-sm text-red-600 hover:underline" type="submit">
+                        Excluir
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </aside>
       </div>
     </div>
