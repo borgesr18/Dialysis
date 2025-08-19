@@ -8,6 +8,10 @@ import { requireAdmin } from '@/lib/roles';
 
 export async function linkExistingUserByEmail(formData: FormData) {
   await requireAdmin();
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const err = encodeURIComponent('Configurar SUPABASE_SERVICE_ROLE_KEY no ambiente para vincular por e-mail.');
+    redirect(`/admin/membros?error=${err}`);
+  }
   const supabase = createClient();
   const admin = createAdminClient();
   const clinica_id = await getCurrentClinicId();
@@ -87,6 +91,10 @@ export async function removeMember(formData: FormData) {
 
 export async function inviteUser(formData: FormData) {
   await requireAdmin();
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const err = encodeURIComponent('Configurar SUPABASE_SERVICE_ROLE_KEY no ambiente para enviar convites.');
+    redirect(`/admin/membros?error=${err}`);
+  }
   const admin = createAdminClient();
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const { error } = await admin.auth.admin.inviteUserByEmail(email, {
