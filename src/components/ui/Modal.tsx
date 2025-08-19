@@ -68,7 +68,8 @@ const Modal: React.FC<ModalProps> = ({
     medical: 'bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 border-teal-200 dark:border-teal-700',
     danger: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700',
     success: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700',
-    warning: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
+    warning: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700',
+    info: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' // Add this line
   }[variant];
   
   if (!isOpen) return null;
