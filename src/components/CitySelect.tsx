@@ -1,30 +1,38 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-export function CitySelect({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
+type Props = {
+  value?: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+};
+
+export default function CitySelect({ value, onChange, disabled }: Props) {
   const [cities, setCities] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let ignore = false;
     (async () => {
       try {
-        const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/PE/municipios');
+        const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/PE/municipios', { cache: 'force-cache' });
         const data = await res.json();
-        setCities(data.map((c: any) => c.nome));
+        if (!ignore) setCities(data.map((c: any) => c?.nome).filter(Boolean));
       } catch {
-        setCities(['Recife', 'Caruaru', 'Petrolina', 'Garanhuns', 'Olinda']);
+        if (!ignore) setCities(['Recife','Caruaru','Petrolina','Garanhuns','Olinda']);
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     })();
+    return () => { ignore = true; };
   }, []);
 
   return (
     <select
-      className="border rounded-md px-3 py-2 w-full"
+      className="input"
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
-      disabled={loading}
+      disabled={disabled || loading}
     >
       <option value="">Selecione a cidade</option>
       {cities.sort().map((n) => (
@@ -33,3 +41,4 @@ export function CitySelect({ value, onChange }: { value?: string; onChange: (v: 
     </select>
   );
 }
+
