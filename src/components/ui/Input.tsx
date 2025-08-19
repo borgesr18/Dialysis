@@ -2,12 +2,11 @@ import { InputHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   hint?: string;
   error?: string;
   success?: string;
-  hint?: string;
   variant?: 'default' | 'medical' | 'search' | 'floating';
   size?: 'sm' | 'md' | 'lg';
   leftIcon?: React.ReactNode;
