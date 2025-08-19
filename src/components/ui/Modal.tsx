@@ -160,7 +160,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     danger: 'danger' as const,
     warning: 'warning' as const,
     info: 'primary' as const,
-    success: 'medical' as const
+    success: 'success' as const
   };
   
   // Map ConfirmationModal variants to Modal variants
