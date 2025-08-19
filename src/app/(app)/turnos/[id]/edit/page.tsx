@@ -26,6 +26,7 @@ async function updateTurno(id: string, fd: FormData) {
     hora_inicio: string;
     hora_fim: string;
     clinica_id?: string;
+    dias_semana?: string[] | null; // Add this missing property
   }
 
   const payload: TurnoPayload = { nome, hora_inicio, hora_fim };
