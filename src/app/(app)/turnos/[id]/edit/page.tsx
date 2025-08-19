@@ -21,7 +21,14 @@ async function updateTurno(id: string, fd: FormData) {
     ? dias.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
     : null;
 
-  const payload: any = { nome, hora_inicio, hora_fim };
+  interface TurnoPayload {
+    nome: string;
+    hora_inicio: string;
+    hora_fim: string;
+    clinica_id?: string;
+  }
+
+  const payload: TurnoPayload = { nome, hora_inicio, hora_fim };
   if (dias_semana) payload.dias_semana = dias_semana;
 
   const { error } = await supabase

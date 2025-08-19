@@ -12,12 +12,15 @@ export default async function AdminConfigPage({ searchParams }: { searchParams?:
   const supabase = createClient();
   const clinicaId = await getCurrentClinicId();
 
-  let clinica: any = null;
-  if (clinicaId) {
-    const { data } = await supabase.from('clinicas').select('*').eq('id', clinicaId).maybeSingle();
-    clinica = data;
+  interface Clinica {
+    id: string;
+    nome: string;
+    endereco?: string;
+    telefone?: string;
+    cidade?: string;
   }
 
+  let clinica: Clinica | null = null;
   const ok = searchParams?.ok;
   const err = searchParams?.error;
 

@@ -15,7 +15,15 @@ async function createMaquina(fd: FormData) {
   const serie = String(fd.get('serie') || '');
   const ativa = String(fd.get('ativa') || 'true') === 'true';
 
-  const insertPayload: any = {
+  interface MaquinaPayload {
+    nome: string;
+    modelo?: string;
+    numero_serie?: string;
+    sala_id?: string;
+    clinica_id: string;
+  }
+
+  const insertPayload: MaquinaPayload = {
     clinica_id,
     sala_id,
     identificador,

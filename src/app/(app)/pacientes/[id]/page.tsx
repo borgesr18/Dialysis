@@ -151,7 +151,7 @@ export default async function PacienteDetalhePage({
             {docs.length === 0 && (
               <div className="text-sm text-neutral-500">Nenhum documento enviado.</div>
             )}
-            {docs.map((d: any) => {
+            {docs.map((d: Documento) => {
               const name = String(d.storage_path).split('/').slice(-1)[0];
               return (
                 <div key={d.id} className="flex items-center justify-between gap-2 border rounded-md px-3 py-2">

@@ -19,7 +19,12 @@ export const CitySelect = ({ value, onChange, disabled }: Props) => {
           'https://servicodados.ibge.gov.br/api/v1/localidades/estados/PE/municipios'
         );
         const data = await res.json();
-        setCities(data.map((c: any) => c.nome));
+        interface CityResponse {
+          nome: string;
+          id: number;
+        }
+        
+        setCities(data.map((c: CityResponse) => c.nome));
       } catch {
         setCities(['Recife', 'Caruaru', 'Petrolina', 'Garanhuns', 'Olinda']);
       } finally {

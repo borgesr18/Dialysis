@@ -1,227 +1,415 @@
-import clsx from 'clsx';
+import { Suspense } from 'react';
+import { Card } from '@/components/ui/Card';
+import { StatCard } from '@/components/ui/StatCard';
+import { 
+  Users, 
+  Calendar, 
+  Activity, 
+  AlertTriangle, 
+  TrendingUp, 
+  Clock,
+  Heart,
+  Droplets
+} from 'lucide-react';
+import { clsx } from 'clsx';
 
 export const dynamic = 'force-dynamic';
 
-export default function DashboardPage() {
+// Componente de Loading para StatCards
+function StatCardSkeleton() {
   return (
-    <div className="space-y-6">
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-gray-500 text-sm font-medium">Total Patients</h3>
-            <div className="p-2 bg-blue-50 text-primary-500 rounded-full">
-              <i className="fa-solid fa-user-group" />
-            </div>
+    <div className="animate-pulse">
+      <Card className="h-32">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2 w-24"></div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
           </div>
-          <div className="flex items-baseline">
-            <p className="text-2xl font-bold text-gray-900">248</p>
-            <p className="ml-2 text-sm text-green-600 flex items-center">
-              <i className="fa-solid fa-arrow-up mr-1" /> 12%
-            </p>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Compared to last month</p>
+          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
         </div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+      </Card>
+    </div>
+  );
+}
 
-        <div className="card">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-gray-500 text-sm font-medium">Today's Appointments</h3>
-            <div className="p-2 bg-green-50 text-green-500 rounded-full">
-              <i className="fa-solid fa-calendar-check" />
-            </div>
-          </div>
-          <div className="flex items-baseline">
-            <p className="text-2xl font-bold text-gray-900">36</p>
-            <p className="ml-2 text-sm text-green-600 flex items-center">
-              <i className="fa-solid fa-arrow-up mr-1" /> 8%
-            </p>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">4 pending confirmations</p>
+// Componente de Estatísticas Principais
+function MainStats() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <StatCard
+        title="Total de Pacientes"
+        value="248"
+        change={{ value: "12%", type: "increase" }}
+        icon={<Users className="w-6 h-6" />}
+        description="Comparado ao mês passado"
+        color="blue"
+      />
+      
+      <StatCard
+        title="Sessões Hoje"
+        value="36"
+        change={{ value: "8%", type: "increase" }}
+        icon={<Calendar className="w-6 h-6" />}
+        description="4 confirmações pendentes"
+        color="green"
+      />
+      
+      <StatCard
+        title="Máquinas Disponíveis"
+        value="18/24"
+        change={{ value: "3", type: "decrease" }}
+        icon={<Activity className="w-6 h-6" />}
+        description="6 atualmente em uso"
+        color="purple"
+      />
+      
+      <StatCard
+        title="Alertas Críticos"
+        value="3"
+        change={{ value: "2", type: "increase" }}
+        icon={<AlertTriangle className="w-6 h-6" />}
+        description="Requer atenção imediata"
+        color="red"
+      />
+    </div>
+  );
+}
+
+// Componente de Métricas Secundárias
+function SecondaryMetrics() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <StatCard
+        title="Taxa de Sucesso"
+        value="98.5%"
+        change={{ value: "0.3%", type: "increase" }}
+        icon={<TrendingUp className="w-5 h-5" />}
+        description="Últimos 30 dias"
+        color="teal"
+      />
+      
+      <StatCard
+        title="Tempo Médio/Sessão"
+        value="4.2h"
+        change={{ value: "5min", type: "neutral" }}
+        icon={<Clock className="w-5 h-5" />}
+        description="Dentro do esperado"
+        color="yellow"
+      />
+      
+      <StatCard
+        title="Satisfação Pacientes"
+        value="4.8/5"
+        change={{ value: "0.2", type: "increase" }}
+        icon={<Heart className="w-5 h-5" />}
+        description="Baseado em 156 avaliações"
+        color="green"
+      />
+    </div>
+  );
+}
+
+// Componente da Tabela de Sessões
+function TodaysSessions() {
+  const sessions = [
+    {
+      id: 1,
+      patient: "Maria Silva",
+      time: "08:00",
+      machine: "HD-01",
+      status: "Em Andamento",
+      progress: 65,
+      type: "Hemodiálise"
+    },
+    {
+      id: 2,
+      patient: "João Santos",
+      time: "08:30",
+      machine: "HD-03",
+      status: "Concluída",
+      progress: 100,
+      type: "Hemodiálise"
+    },
+    {
+      id: 3,
+      patient: "Ana Costa",
+      time: "09:00",
+      machine: "HD-05",
+      status: "Aguardando",
+      progress: 0,
+      type: "Diálise Peritoneal"
+    },
+    {
+      id: 4,
+      patient: "Carlos Lima",
+      time: "09:30",
+      machine: "HD-02",
+      status: "Em Andamento",
+      progress: 25,
+      type: "Hemodiálise"
+    },
+    {
+      id: 5,
+      patient: "Lucia Ferreira",
+      time: "10:00",
+      machine: "HD-04",
+      status: "Preparando",
+      progress: 5,
+      type: "Hemodiálise"
+    }
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Concluída': return 'bg-medical-success-100 text-medical-success-800 dark:bg-medical-success-900/20 dark:text-medical-success-400';
+      case 'Em Andamento': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'Aguardando': return 'bg-medical-warning-100 text-medical-warning-800 dark:bg-medical-warning-900/20 dark:text-medical-warning-400';
+      case 'Preparando': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+    }
+  };
+
+  return (
+    <Card variant="elevated" className="overflow-hidden">
+      <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+            <Droplets className="w-5 h-5 mr-2 text-blue-500" />
+            Sessões de Hoje
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {sessions.length} sessões programadas
+          </p>
         </div>
-
-        <div className="card">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-gray-500 text-sm font-medium">Available Machines</h3>
-            <div className="p-2 bg-purple-50 text-purple-500 rounded-full">
-              <i className="fa-solid fa-pump-medical" />
-            </div>
-          </div>
-          <div className="flex items-baseline">
-            <p className="text-2xl font-bold text-gray-900">18/24</p>
-            <p className="ml-2 text-sm text-yellow-600 flex items-center">
-              <i className="fa-solid fa-arrow-down mr-1" /> 3
-            </p>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">6 currently in use</p>
-        </div>
-
-        <div className="card">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-gray-500 text-sm font-medium">Critical Alerts</h3>
-            <div className="p-2 bg-red-50 text-red-500 rounded-full">
-              <i className="fa-solid fa-triangle-exclamation" />
-            </div>
-          </div>
-          <div className="flex items-baseline">
-            <p className="text-2xl font-bold text-gray-900">3</p>
-            <p className="ml-2 text-sm text-red-600 flex items-center">
-              <i className="fa-solid fa-arrow-up mr-1" /> 2
-            </p>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Requires immediate attention</p>
+        <div className="flex space-x-2">
+          <button className="px-3 py-1.5 text-sm text-primary-600 bg-primary-50 dark:bg-primary-900/20 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors duration-200 flex items-center">
+            <Calendar className="w-4 h-4 mr-1" />
+            Filtrar
+          </button>
+          <button className="px-3 py-1.5 text-sm text-white bg-gradient-medical rounded-lg hover:shadow-glow transition-all duration-200">
+            <Users className="w-4 h-4 mr-1" />
+            Nova Sessão
+          </button>
         </div>
       </div>
 
-      {/* Conteúdo principal (lista + estatísticas) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Tabela de agendamentos (exemplo estático) */}
-        <div className="lg:col-span-2 card p-0">
-          <div className="flex justify-between items-center p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800">Today's Appointments</h3>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 text-sm text-primary-600 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors duration-200">
-                <i className="fa-solid fa-filter mr-1" /> Filter
-              </button>
-              <button className="px-3 py-1 text-sm text-primary-600 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors duration-200">
-                <i className="fa-solid fa-plus mr-1" /> Add New
-              </button>
-            </div>
-          </div>
-
-          <div className="p-6 overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  {['Patient','Time','Type','Status','Actions'].map(h => (
-                    <th key={h} className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {[
-                  { name:'Sarah Johnson', id:'PT-2458', time:'09:00', dur:'30 min', type:'Hemodialysis', st:'In Progress', stc:'bg-green-50 text-green-700', avatar:1 },
-                  { name:'Robert Chen', id:'PT-1875', time:'10:15', dur:'45 min', type:'Peritoneal', st:'Waiting', stc:'bg-yellow-50 text-yellow-700', avatar:3 },
-                  { name:'Maria Garcia', id:'PT-3142', time:'11:30', dur:'30 min', type:'Hemodialysis', st:'Scheduled', stc:'bg-gray-50 text-gray-700', avatar:5 },
-                  { name:'David Smith', id:'PT-1923', time:'13:45', dur:'45 min', type:'Hemodialysis', st:'Scheduled', stc:'bg-gray-50 text-gray-700', avatar:2 },
-                ].map((r, i) => (
-                  <tr key={i}>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <img src={`https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-${r.avatar}.jpg`}
-                             className="w-8 h-8 rounded-full mr-3" alt="Patient Avatar" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{r.name}</p>
-                          <p className="text-xs text-gray-500">ID: {r.id}</p>
-                        </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <thead className="bg-gray-50 dark:bg-gray-800/50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Paciente
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Horário
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Máquina
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Tipo
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Progresso
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {sessions.map((session) => (
+              <tr key={session.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      {session.patient.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div className="ml-3">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {session.patient}
                       </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <p className="text-sm text-gray-900">{r.time}</p>
-                      <p className="text-xs text-gray-500">{r.dur}</p>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="chip bg-blue-50 text-blue-700">{r.type}</span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`chip ${r.stc}`}>{r.st}</span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex space-x-2">
-                        <button className="text-gray-400 hover:text-primary-500"><i className="fa-solid fa-eye" /></button>
-                        <button className="text-gray-400 hover:text-primary-500"><i className="fa-solid fa-pen-to-square" /></button>
-                        <button className="text-gray-400 hover:text-red-500"><i className="fa-solid fa-xmark" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="flex justify-between items-center mt-4">
-              <p className="text-sm text-gray-500">Showing 4 of 36 appointments</p>
-              <div className="flex space-x-1">
-                <button className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50"><i className="fa-solid fa-chevron-left" /></button>
-                <button className="px-3 py-1 text-sm bg-primary-500 border border-primary-500 rounded-md text-white">1</button>
-                <button className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50">2</button>
-                <button className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50">3</button>
-                <button className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md text-gray-500 hover:bg-gray-50"><i className="fa-solid fa-chevron-right" /></button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Coluna direita (monitor/alertas/recursos) */}
-        <div className="space-y-6">
-          <div className="card">
-            <div className="flex justify-between items-center border-b border-gray-100 pb-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800">Patient Monitor</h3>
-              <button className="text-gray-400 hover:text-gray-600"><i className="fa-solid fa-ellipsis-vertical" /></button>
-            </div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" className="w-10 h-10 rounded-full mr-3" alt="Patient Avatar" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Sarah Johnson</p>
-                  <p className="text-xs text-gray-500">Station #4 • Started 1h 23m ago</p>
-                </div>
-              </div>
-              <span className="chip bg-green-50 text-green-700">Stable</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Blood Pressure</p>
-                <p className="text-lg font-semibold">120/80 <span className="text-xs font-normal text-gray-500">mmHg</span></p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Heart Rate</p>
-                <p className="text-lg font-semibold">72 <span className="text-xs font-normal text-gray-500">bpm</span></p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Fluid Removal</p>
-                <p className="text-lg font-semibold">1.2 <span className="text-xs font-normal text-gray-500">L</span></p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Flow Rate</p>
-                <p className="text-lg font-semibold">350 <span className="text-xs font-normal text-gray-500">mL/min</span></p>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <button className="text-sm text-primary-600 hover:text-primary-700"><i className="fa-solid fa-eye mr-1" /> View Details</button>
-              <button className="text-sm text-white bg-primary-500 hover:bg-primary-600 px-3 py-1.5 rounded-md transition-colors duration-200">
-                <i className="fa-solid fa-pen-to-square mr-1" /> Update Vitals
-              </button>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex justify-between items-center border-b border-gray-100 pb-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800">Resource Availability</h3>
-              <button className="text-gray-400 hover:text-gray-600"><i className="fa-solid fa-arrows-rotate" /></button>
-            </div>
-
-            {[
-              { label:'Dialysis Machines', pct:75, text:'18/24 available' },
-              { label:'Dialysate Solution', pct:82, text:'82% in stock' },
-              { label:'Dialyzers',         pct:45, text:'45% in stock', warn:'text-yellow-500' },
-              { label:'EPO Medication',    pct:12, text:'12% in stock', warn:'text-red-500' },
-            ].map((r) => (
-              <div key={r.label} className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium">{r.label}</p>
-                  <p className={clsx('text-sm', r.warn ?? 'text-gray-500')}>{r.text}</p>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${r.pct}%` }} />
-                </div>
-              </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-mono">
+                  {session.time}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                    {session.machine}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                  {session.type}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-2">
+                      <div 
+                        className={clsx(
+                          'h-2 rounded-full transition-all duration-500',
+                          session.progress === 100 ? 'bg-gradient-success' :
+                          session.progress > 50 ? 'bg-gradient-medical' :
+                          session.progress > 0 ? 'bg-gradient-warning' : 'bg-gray-300'
+                        )}
+                        style={{ width: `${session.progress}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[3rem]">
+                      {session.progress}%
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={clsx(
+                    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                    getStatusColor(session.status)
+                  )}>
+                    {session.status}
+                  </span>
+                </td>
+              </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
 
-            <button className="mt-4 w-full text-sm text-white bg-primary-500 hover:bg-primary-600 py-2 rounded-md transition-colors duration-200">
-              <i className="fa-solid fa-cart-shopping mr-1" /> Order Supplies
-            </button>
+// Componente de Alertas Rápidos
+function QuickAlerts() {
+  const alerts = [
+    {
+      id: 1,
+      type: 'warning',
+      title: 'Manutenção Programada',
+      message: 'Máquina HD-06 em manutenção às 14:00',
+      time: '2h'
+    },
+    {
+      id: 2,
+      type: 'danger',
+      title: 'Pressão Anormal',
+      message: 'Paciente João - Verificar imediatamente',
+      time: '5min'
+    },
+    {
+      id: 3,
+      type: 'success',
+      title: 'Sessão Concluída',
+      message: 'Maria Silva - Sessão finalizada com sucesso',
+      time: '10min'
+    }
+  ];
+
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'warning': return <Clock className="w-4 h-4" />;
+      case 'danger': return <AlertTriangle className="w-4 h-4" />;
+      case 'success': return <Heart className="w-4 h-4" />;
+      default: return <Activity className="w-4 h-4" />;
+    }
+  };
+
+  const getAlertColor = (type: string) => {
+    switch (type) {
+      case 'warning': return 'text-medical-warning-600 bg-medical-warning-50 dark:text-medical-warning-400 dark:bg-medical-warning-900/20';
+      case 'danger': return 'text-medical-danger-600 bg-medical-danger-50 dark:text-medical-danger-400 dark:bg-medical-danger-900/20';
+      case 'success': return 'text-medical-success-600 bg-medical-success-50 dark:text-medical-success-400 dark:bg-medical-success-900/20';
+      default: return 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-700';
+    }
+  };
+
+  return (
+    <Card variant="medical" className="h-fit">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+          <AlertTriangle className="w-5 h-5 mr-2 text-orange-500" />
+          Alertas Recentes
+        </h3>
+        <button className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+          Ver todos
+        </button>
+      </div>
+      
+      <div className="space-y-3">
+        {alerts.map((alert) => (
+          <div key={alert.id} className="flex items-start space-x-3 p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors duration-200">
+            <div className={clsx('p-2 rounded-lg', getAlertColor(alert.type))}>
+              {getAlertIcon(alert.type)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {alert.title}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {alert.message}
+              </p>
+            </div>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              {alert.time}
+            </span>
           </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Dashboard
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Visão geral das operações da clínica
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <button className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+            Exportar Relatório
+          </button>
+          <button className="px-4 py-2 text-sm text-white bg-gradient-medical rounded-lg hover:shadow-glow transition-all duration-200">
+            Atualizar Dados
+          </button>
+        </div>
+      </div>
+
+      {/* Estatísticas Principais */}
+      <Suspense fallback={
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => <StatCardSkeleton key={i} />)}
+        </div>
+      }>
+        <MainStats />
+      </Suspense>
+
+      {/* Métricas Secundárias */}
+      <Suspense fallback={
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => <StatCardSkeleton key={i} />)}
+        </div>
+      }>
+        <SecondaryMetrics />
+      </Suspense>
+
+      {/* Conteúdo Principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Tabela de Sessões */}
+        <div className="lg:col-span-2">
+          <TodaysSessions />
+        </div>
+        
+        {/* Alertas */}
+        <div>
+          <QuickAlerts />
         </div>
       </div>
     </div>

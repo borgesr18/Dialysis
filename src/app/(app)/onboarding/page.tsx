@@ -1,59 +1,119 @@
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase-server';
+import { requireSignedIn } from '@/lib/roles';
 
 export const dynamic = 'force-dynamic';
 
-export default function OnboardingClinica() {
+async function createClinicaAction(formData: FormData) {
+  'use server';
+  
+  const user = await requireSignedIn();
+  const supabase = createClient();
+  
+  const nome = String(formData.get('nome') ?? '').trim();
+  const cidade = String(formData.get('cidade') ?? '').trim();
+  
+  if (!nome) {
+    redirect('/onboarding?error=' + encodeURIComponent('Nome da clínica é obrigatório'));
+  }
+  
+  // Criar clínica
+  const { data: clinica, error: clinicaError } = await supabase
+    .from('clinicas')
+    .insert({ nome, cidade })
+    .select('id')
+    .single();
+    
+  if (clinicaError) {
+    redirect('/onboarding?error=' + encodeURIComponent(clinicaError.message));
+  }
+  
+  // Criar perfil do usuário
+  const { error: perfilError } = await supabase
+    .from('perfis_usuarios')
+    .upsert({ id: user.id, nome: user.email?.split('@')[0] || 'Admin', papel: 'ADMIN' });
+    
+  if (perfilError) {
+    redirect('/onboarding?error=' + encodeURIComponent(perfilError.message));
+  }
+  
+  // Vincular usuário à clínica
+  const { error: vinculoError } = await supabase
+    .from('usuarios_clinicas')
+    .insert({ user_id: user.id, clinica_id: clinica.id });
+    
+  if (vinculoError) {
+    redirect('/onboarding?error=' + encodeURIComponent(vinculoError.message));
+  }
+  
+  redirect('/dashboard');
+}
+
+export default function OnboardingPage({
+  searchParams,
+}: {
+  searchParams?: { error?: string };
+}) {
+  const error = searchParams?.error;
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Vincular clínica</h1>
-
-      <div className="card space-y-4">
-        <p className="text-sm text-neutral-700">
-          Você está autenticado, mas ainda <b>não possui vínculo</b> com nenhuma clínica.
-          Para continuar, crie/associe uma clínica ao seu usuário no Supabase.
-        </p>
-
-        <ol className="list-decimal pl-5 space-y-3 text-sm text-neutral-800">
-          <li>Acesse o <b>SQL Editor</b> do Supabase do seu projeto.</li>
-          <li>Rode os comandos abaixo (ajuste o <b>SEU_USER_ID</b> e o <b>CLINICA_ID</b>). Depois volte e atualize a página.</li>
-        </ol>
-
-        <pre className="p-3 bg-gray-900 text-gray-100 rounded-md overflow-auto text-xs">
-{`-- 1) Descobrir seu usuário (pegar o id certo pelo e-mail usado no login)
-select id, email, created_at from auth.users order by created_at desc limit 20;
-
--- 2) Se já existir uma clínica, pegue o id:
--- select id, nome, created_at from public.clinicas order by created_at desc;
-
--- (opcional) 2a) Criar clínica se necessário:
-insert into public.clinicas (id, nome)
-values (gen_random_uuid(), 'Clínica Modelo PE')
-returning id;
-
--- 3) Upsert do seu perfil
-insert into public.perfis_usuarios (id, nome, papel)
-values ('SEU_USER_ID', 'Administrador', 'ADMIN')
-on conflict (id) do update set nome = excluded.nome, papel = excluded.papel;
-
--- 4) Vínculo usuário ↔ clínica
-insert into public.usuarios_clinicas (user_id, clinica_id)
-values ('SEU_USER_ID', 'CLINICA_ID')
-on conflict (user_id, clinica_id) do nothing;
-
--- 5) Conferir
-select * from public.usuarios_clinicas where user_id = 'SEU_USER_ID';`}
-        </pre>
-
-        <div className="flex gap-2">
-          <Link href="/pacientes" className="btn">Já vinculei, atualizar</Link>
-          <Link href="/dashboard" className="px-4 py-2 rounded-md border hover:bg-gray-50">
-            Voltar ao Dashboard
-          </Link>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="w-full max-w-md bg-white shadow-sm rounded-xl p-6 border border-gray-100">
+        <div className="mb-6 text-center">
+          <h1 className="text-xl font-semibold">Configurar Clínica</h1>
+          <p className="text-sm text-neutral-500">
+            Para continuar, configure sua clínica.
+          </p>
         </div>
 
-        <p className="text-xs text-neutral-500">
-          Dica: se estiver usando outro e-mail no ambiente de produção, crie o vínculo para <b>esse</b> usuário (id).
-        </p>
+        {error && (
+          <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {decodeURIComponent(error)}
+          </div>
+        )}
+
+        <form action={createClinicaAction} className="space-y-4">
+          <div>
+            <label htmlFor="nome" className="block text-sm font-medium text-gray-700">
+              Nome da Clínica
+            </label>
+            <input
+              type="text"
+              id="nome"
+              name="nome"
+              required
+              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+              placeholder="Ex: Clínica Nefrológica São Paulo"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="cidade" className="block text-sm font-medium text-gray-700">
+              Cidade
+            </label>
+            <input
+              type="text"
+              id="cidade"
+              name="cidade"
+              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+              placeholder="Ex: São Paulo"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800"
+          >
+            Criar Clínica
+          </button>
+        </form>
+        
+        <div className="mt-6 p-4 bg-gray-50 rounded-md">
+          <h3 className="font-medium text-sm mb-2">Alternativa Manual:</h3>
+          <p className="text-xs text-gray-600">
+            Se preferir, você pode configurar manualmente no Supabase SQL Editor usando os comandos do README.
+          </p>
+        </div>
       </div>
     </div>
   );
