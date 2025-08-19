@@ -58,6 +58,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             </Link>
 
             <Link
+              href="/maquinas"
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-secondary-700 hover:text-white mb-1 transition-colors duration-200"
+            >
+              <i className="fa-solid fa-microscope w-5 text-center" />
+              <span>Máquinas</span>
+            </Link>
+
+            <Link
               href="/turnos"
               className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-secondary-700 hover:text-white mb-1 transition-colors duration-200"
             >
