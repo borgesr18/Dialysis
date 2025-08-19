@@ -40,3 +40,6 @@ hemodialise-mvp/
 
 ---
 Gerado em 2025-08-18T17:44:49.706407.
+
+PR base para modernização de UI.
+
