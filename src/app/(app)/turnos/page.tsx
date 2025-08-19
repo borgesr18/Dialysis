@@ -19,10 +19,6 @@ async function deleteTurno(id: string) {
 }
 
 
-
-import { getCurrentClinicId } from '@/lib/get-clinic';
-
-
 export default async function TurnosPage() {
   const supabase = createClient();
   const clinicaId = await getCurrentClinicId();
