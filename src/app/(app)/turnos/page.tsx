@@ -31,18 +31,40 @@ export default async function TurnosPage() {
 
       {error && <p className="text-red-600">Erro ao carregar turnos: {error.message}</p>}
 
-      <div className="grid gap-2">
-        {(turnos ?? []).map((t) => (
-          <div key={t.id} className="card">
-            <div className="font-medium">{t.nome}</div>
-            <div className="text-sm text-neutral-600">
-              {String(t.hora_inicio)}–{String(t.hora_fim)} • {Array.isArray(t.dias_semana) ? t.dias_semana.join(', ') : '—'}
-            </div>
-          </div>
-        ))}
-        {(!turnos || turnos.length === 0) && (
-          <div className="text-sm text-neutral-500">Nenhum turno cadastrado.</div>
-        )}
+      <div className="rounded-xl border border-neutral-200 bg-white overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="text-left text-neutral-600">
+              <th className="px-4 py-3">Nome</th>
+              <th className="px-4 py-3">Hora</th>
+              <th className="px-4 py-3">Dias</th>
+              <th className="px-4 py-3">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(turnos ?? []).map((t) => (
+              <tr key={t.id} className="border-t">
+                <td className="px-4 py-3">{t.nome}</td>
+                <td className="px-4 py-3">
+                  {String(t.hora_inicio)}–{String(t.hora_fim)}
+                </td>
+                <td className="px-4 py-3">{Array.isArray(t.dias_semana) ? t.dias_semana.join(', ') : '—'}</td>
+                <td className="px-4 py-3">
+                  <a href={`/turnos/${t.id}/edit`} className="text-primary-700 hover:underline">
+                    Editar
+                  </a>
+                </td>
+              </tr>
+            ))}
+            {(!turnos || turnos.length === 0) && (
+              <tr>
+                <td className="px-4 py-6 text-neutral-600" colSpan={4}>
+                  Nenhum turno cadastrado.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
