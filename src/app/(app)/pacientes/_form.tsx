@@ -5,10 +5,17 @@ import { CitySelect } from '@/components/CitySelect';
 
 export default function PacienteForm({
   action,
+  defaults,
 }: {
   action: (formData: FormData) => void;
+  defaults?: {
+    registro?: string;
+    nomeCompleto?: string;
+    cidadeNome?: string | null;
+    alertaTexto?: string | null;
+  };
 }) {
-  const [cidade, setCidade] = useState<string>('');
+  const [cidade, setCidade] = useState<string>(defaults?.cidadeNome ?? '');
 
   return (
     <form action={action} className="grid gap-3">
@@ -19,6 +26,7 @@ export default function PacienteForm({
         <input
           id="registro"
           name="registro"
+          defaultValue={defaults?.registro ?? ''}
           autoComplete="off"
           required
           className="border rounded-md px-3 py-2"
@@ -33,6 +41,7 @@ export default function PacienteForm({
         <input
           id="nomeCompleto"
           name="nomeCompleto"
+          defaultValue={defaults?.nomeCompleto ?? ''}
           autoComplete="name"
           required
           className="border rounded-md px-3 py-2"
@@ -42,7 +51,6 @@ export default function PacienteForm({
 
       <div className="grid gap-1.5">
         <label className="text-sm text-neutral-700">Cidade (PE)</label>
-        {/* CitySelect controla a UI; passamos o valor via input oculto para a Server Action */}
         <CitySelect value={cidade} onChange={setCidade} />
         <input type="hidden" name="cidadeNome" value={cidade} />
       </div>
@@ -54,6 +62,7 @@ export default function PacienteForm({
         <textarea
           id="alertaTexto"
           name="alertaTexto"
+          defaultValue={defaults?.alertaTexto ?? ''}
           className="border rounded-md px-3 py-2 min-h-[80px]"
           placeholder="Alergias, isolamento, particularidades..."
         />
