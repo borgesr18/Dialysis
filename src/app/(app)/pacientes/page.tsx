@@ -1,136 +1,153 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import PacienteForm from './_form';
+import { createPacienteAction } from './_actions';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
-import { toggleAtivo, removePaciente } from './_actions';
+
+type Paciente = {
+  id: string;
+  registro: string;
+  nome_completo: string;
+  cidade_nome: string | null;
+  alerta_texto: string | null;
+  ativo: boolean | null;
+};
 
 export const dynamic = 'force-dynamic';
 
-type SearchParams = { q?: string; status?: 'todos' | 'ativos' | 'inativos' };
+export default async function PacientesPage({
+  searchParams,
+}: {
+  searchParams?: { error?: string; msg?: string };
+}) {
+  const error = searchParams?.error;
+  const msg = searchParams?.msg;
 
-export default async function PacientesPage({ searchParams }: { searchParams: SearchParams }) {
   const supabase = createClient();
-  const clinicaId = await getCurrentClinicId();
 
-  // Sem vínculo -> onboarding (evita 500)
-  if (!clinicaId) redirect('/onboarding');
+  // Tenta obter a clínica atual (evita 500 caso o usuário ainda não tenha vínculo)
+  let clinicaId: string | null = null;
+  try {
+    clinicaId = await getCurrentClinicId();
+  } catch {
+    clinicaId = null;
+  }
 
-  const q = (searchParams.q ?? '').trim();
-  const status = (searchParams.status ?? 'ativos') as SearchParams['status'];
+  if (!clinicaId) {
+    return (
+      <div className="p-6 space-y-6">
+        <h1 className="text-2xl font-semibold">Pacientes</h1>
 
-  let query = supabase
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+        >
+          Você ainda não está vinculado a uma clínica.
+          <Link href="/onboarding" className="ml-2 underline text-amber-900">
+            Vincular agora
+          </Link>
+        </div>
+
+        <p className="text-neutral-600">
+          Após concluir o onboarding, você poderá cadastrar e visualizar pacientes.
+        </p>
+      </div>
+    );
+  }
+
+  // Busca pacientes da clínica
+  const { data: pacientes, error: fetchErr } = await supabase
     .from('pacientes')
-    .select('id, registro, nome_completo, cidade_nome, ativo, alerta_texto')
+    .select('id, registro, nome_completo, cidade_nome, alerta_texto, ativo')
     .eq('clinica_id', clinicaId)
     .order('nome_completo', { ascending: true });
 
-  if (q) query = query.or(`nome_completo.ilike.%${q}%,registro.ilike.%${q}%`);
-  if (status === 'ativos') query = query.eq('ativo', true);
-  if (status === 'inativos') query = query.eq('ativo', false);
-
-  const { data: pacientes, error } = await query;
-  if (error) {
-    return <div className="p-6 text-red-600">Erro ao carregar pacientes: {error.message}</div>;
-  }
+  const lista = (pacientes ?? []) as Paciente[];
 
   return (
-    <div className="space-y-4">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Pacientes</h1>
-        <Link href="/pacientes/new" className="btn">
-          <i className="fa-solid fa-plus mr-2" /> Novo paciente
+        <Link
+          href="/agenda"
+          className="text-sm rounded-lg px-3 py-2 border border-neutral-200 hover:bg-neutral-50"
+        >
+          Ir para Agenda
         </Link>
       </div>
 
-      <form className="card grid md:grid-cols-4 gap-3">
-        <input
-          className="input md:col-span-2"
-          name="q"
-          defaultValue={q}
-          placeholder="Buscar por nome ou REG"
-        />
-        <select className="input" name="status" defaultValue={status}>
-          <option value="todos">Todos</option>
-          <option value="ativos">Ativos</option>
-          <option value="inativos">Inativos</option>
-        </select>
-        <button className="btn md:col-start-4" type="submit">
-          <i className="fa-solid fa-magnifying-glass mr-2" /> Filtrar
-        </button>
-      </form>
+      {error && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
+          {error}
+        </div>
+      )}
+      {msg && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700"
+        >
+          {msg}
+        </div>
+      )}
+      {fetchErr && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
+          Falha ao carregar pacientes: {fetchErr.message}
+        </div>
+      )}
 
-      <div className="grid gap-2">
-        {(pacientes ?? []).map((p) => (
-          <div key={p.id} className="card flex items-center justify-between">
-            <div>
-              <div className="font-medium">{p.nome_completo}</div>
-              <div className="text-sm text-neutral-600">
-                REG {p.registro} • {p.cidade_nome ?? '—'}
-              </div>
-              {p.alerta_texto && (
-                <div className="text-xs mt-1 chip bg-red-50 text-red-700">
-                  <i className="fa-solid fa-triangle-exclamation mr-1" />
-                  {p.alerta_texto}
+      {/* Formulário de criação */}
+      <div className="rounded-xl border border-neutral-200 bg-white p-4">
+        <h2 className="text-lg font-medium mb-3">Novo paciente</h2>
+        <PacienteForm action={createPacienteAction} />
+      </div>
+
+      {/* Lista */}
+      <div className="space-y-2">
+        <div className="text-sm text-neutral-500">
+          {lista.length === 0
+            ? 'Nenhum paciente cadastrado.'
+            : `${lista.length} paciente(s) encontrados.`}
+        </div>
+
+        <div className="grid gap-2">
+          {lista.map((p) => (
+            <div
+              key={p.id}
+              className="border rounded-xl p-3 bg-white flex items-center justify-between"
+            >
+              <div className="min-w-0">
+                <div className="font-medium truncate">{p.nome_completo}</div>
+                <div className="text-sm text-neutral-500">
+                  REG {p.registro} • {p.cidade_nome ?? '—'}
                 </div>
-              )}
+                {p.alerta_texto && (
+                  <div className="mt-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-block">
+                    {p.alerta_texto}
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-neutral-500">
+                {p.ativo === false ? (
+                  <span className="rounded bg-neutral-100 px-2 py-1">Inativo</span>
+                ) : (
+                  <span className="rounded bg-green-50 text-green-700 px-2 py-1 border border-green-200">
+                    Ativo
+                  </span>
+                )}
+              </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Link
-                className="px-3 py-1.5 rounded-md border hover:bg-gray-50 text-sm"
-                href={`/pacientes/${p.id}`}
-              >
-                <i className="fa-solid fa-eye mr-1" /> Ver
-              </Link>
-
-              <Link
-                className="px-3 py-1.5 rounded-md border hover:bg-gray-50 text-sm"
-                href={`/pacientes/${p.id}/edit`}
-              >
-                <i className="fa-solid fa-pen-to-square mr-1" /> Editar
-              </Link>
-
-              {/* Toggle ativo/inativo (Server Action inline) */}
-              <form
-                action={async () => {
-                  'use server';
-                  await toggleAtivo(p.id, !p.ativo);
-                }}
-              >
-                <button className="px-3 py-1.5 rounded-md border hover:bg-gray-50 text-sm" type="submit">
-                  {p.ativo ? (
-                    <>
-                      <i className="fa-solid fa-user-slash mr-1" /> Inativar
-                    </>
-                  ) : (
-                    <>
-                      <i className="fa-solid fa-user-check mr-1" /> Ativar
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Remover (Server Action inline) */}
-              <form
-                action={async () => {
-                  'use server';
-                  await removePaciente(p.id);
-                }}
-              >
-                <button
-                  className="px-3 py-1.5 rounded-md border hover:bg-red-50 text-sm text-red-600"
-                  type="submit"
-                >
-                  <i className="fa-solid fa-trash mr-1" /> Remover
-                </button>
-              </form>
-            </div>
-          </div>
-        ))}
-
-        {(!pacientes || pacientes.length === 0) && (
-          <div className="text-sm text-neutral-500">Nenhum paciente encontrado.</div>
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );
