@@ -1,54 +1,70 @@
 'use client';
 
 import { useState } from 'react';
-import CitySelect from '@/components/CitySelect';
+import { CitySelect } from '@/components/CitySelect';
 
-type Props = {
-  action: (fd: FormData) => void;
-  initial?: {
-    registro?: string | null;
-    nome_completo?: string | null;
-    cidade_nome?: string | null;
-    alerta_texto?: string | null;
-  };
-  submitLabel?: string;
-  cancelHref?: string;
-};
-
-export default function PacienteForm({ action, initial, submitLabel = 'Salvar', cancelHref }: Props) {
-  const [cidade, setCidade] = useState(initial?.cidade_nome ?? '');
+export default function PacienteForm({
+  action,
+}: {
+  action: (formData: FormData) => void;
+}) {
+  const [cidade, setCidade] = useState<string>('');
 
   return (
-    <form action={action} className="card grid gap-3">
-      <div className="grid md:grid-cols-3 gap-3">
-        <div>
-          <label className="label">Registro (REG)</label>
-          <input name="registro" defaultValue={initial?.registro ?? ''} className="input" placeholder="0001" required />
-        </div>
-        <div className="md:col-span-2">
-          <label className="label">Nome completo</label>
-          <input name="nome_completo" defaultValue={initial?.nome_completo ?? ''} className="input" placeholder="Nome do paciente" required />
-        </div>
+    <form action={action} className="grid gap-3">
+      <div className="grid gap-1.5">
+        <label htmlFor="registro" className="text-sm text-neutral-700">
+          REG
+        </label>
+        <input
+          id="registro"
+          name="registro"
+          autoComplete="off"
+          required
+          className="border rounded-md px-3 py-2"
+          placeholder="0001"
+        />
       </div>
 
-      <div className="grid md:grid-cols-3 gap-3">
-        <div className="md:col-span-2">
-          <label className="label">Cidade (PE)</label>
-          <CitySelect value={cidade} onChange={setCidade} />
-          <input type="hidden" name="cidade_nome" value={cidade} />
-        </div>
-        <div>
-          <label className="label">Alerta (ex.: isolamento, alergias)</label>
-          <input name="alerta_texto" defaultValue={initial?.alerta_texto ?? ''} className="input" placeholder="Observação/alerta" />
-        </div>
+      <div className="grid gap-1.5">
+        <label htmlFor="nomeCompleto" className="text-sm text-neutral-700">
+          Nome completo
+        </label>
+        <input
+          id="nomeCompleto"
+          name="nomeCompleto"
+          autoComplete="name"
+          required
+          className="border rounded-md px-3 py-2"
+          placeholder="Nome e sobrenome"
+        />
       </div>
 
-      <div className="flex gap-2 justify-end">
-        {cancelHref && (
-          <a href={cancelHref} className="px-4 py-2 rounded-md border hover:bg-gray-50">Cancelar</a>
-        )}
-        <button className="btn" type="submit">{submitLabel}</button>
+      <div className="grid gap-1.5">
+        <label className="text-sm text-neutral-700">Cidade (PE)</label>
+        {/* CitySelect controla a UI; passamos o valor via input oculto para a Server Action */}
+        <CitySelect value={cidade} onChange={setCidade} />
+        <input type="hidden" name="cidadeNome" value={cidade} />
+      </div>
+
+      <div className="grid gap-1.5">
+        <label htmlFor="alertaTexto" className="text-sm text-neutral-700">
+          Observações / Alertas
+        </label>
+        <textarea
+          id="alertaTexto"
+          name="alertaTexto"
+          className="border rounded-md px-3 py-2 min-h-[80px]"
+          placeholder="Alergias, isolamento, particularidades..."
+        />
+      </div>
+
+      <div className="pt-1">
+        <button type="submit" className="rounded-xl px-4 py-2 bg-black text-white">
+          Salvar
+        </button>
       </div>
     </form>
   );
 }
+
