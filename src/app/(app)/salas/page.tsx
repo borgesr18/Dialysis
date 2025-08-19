@@ -1,5 +1,24 @@
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
+
+async function deleteSala(id: string) {
+
+  'use server';
+  const supabase = createClient();
+  const clinica_id = await getCurrentClinicId();
+  const { error } = await supabase
+    .from('salas')
+    .delete()
+    .eq('id', id)
+    .eq('clinica_id', clinica_id);
+  const ok = !error ? 'Sala excluída com sucesso' : '';
+  const err = error ? encodeURIComponent(error.message) : '';
+  const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
+  redirect(`/salas${params}`);
+}
+
+
 
 
 export default async function SalasPage() {
@@ -44,9 +63,16 @@ export default async function SalasPage() {
                 <td className="px-4 py-3">{s.nome}</td>
                 <td className="px-4 py-3">{s.descricao ?? '—'}</td>
                 <td className="px-4 py-3">
-                  <a href={`/salas/${s.id}/edit`} className="text-primary-700 hover:underline">
-                    Editar
-                  </a>
+                  <div className="flex items-center gap-3">
+                    <a href={`/salas/${s.id}/edit`} className="text-primary-700 hover:underline">
+                      Editar
+                    </a>
+                    <form action={deleteSala.bind(null, s.id)}>
+                      <button className="text-red-600 hover:underline" type="submit">
+                        Excluir
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
