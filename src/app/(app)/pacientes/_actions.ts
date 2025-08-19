@@ -1,27 +1,26 @@
 'use server';
 
-import { revalidatePath, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
+import { revalidatePath, redirect } from 'next/navigation';
 
-export async function createPacienteAction(formData: FormData) {
-  const registroRaw = String(formData.get('registro') ?? '');
-  const nomeCompleto = String(formData.get('nomeCompleto') ?? '');
-  const cidadeNome   = String(formData.get('cidadeNome') ?? '');
-  const alertaTexto  = String(formData.get('alertaTexto') ?? '');
+function q(msg: string) {
+  return encodeURIComponent(msg);
+}
 
-  // Normalização no app também (caso você queira manter o REG como digitado, tudo bem;
-  // o que importa é o registro_norm do BD; aqui só evitamos problemas comuns)
-  const registro = registroRaw.trim();
+export async function createPaciente(formData: FormData) {
+  const supabase = createClient();
+  const clinicaId = await getCurrentClinicId();
+
+  const registro = String(formData.get('registro') ?? '').trim();
+  const nomeCompleto = String(formData.get('nomeCompleto') ?? '').trim();
+  const cidadeNome = String(formData.get('cidadeNome') ?? '').trim();
+  const alertaTexto = String(formData.get('alertaTexto') ?? '').trim();
 
   if (!registro || !nomeCompleto) {
-    redirect('/pacientes?error=' + encodeURIComponent('Informe REG e Nome.'));
+    redirect('/pacientes?error=' + q('Informe REG e Nome.'));
   }
 
-  const supabase = createClient();
-  const clinicaId = await getCurrentClinicId(); // lança erro se não houver vínculo
-
-  // Tenta inserir e captura o código 23505 (unique_violation)
   const { error } = await supabase.from('pacientes').insert({
     clinica_id: clinicaId,
     registro,
@@ -32,12 +31,51 @@ export async function createPacienteAction(formData: FormData) {
 
   if (error) {
     if ((error as any).code === '23505') {
-      redirect('/pacientes?error=' + encodeURIComponent(`Já existe um paciente com REG "${registro}" nesta clínica.`));
+      redirect('/pacientes?error=' + q(`Já existe um paciente com REG "${registro}" nesta clínica.`));
     }
-    redirect('/pacientes?error=' + encodeURIComponent('Falha ao salvar paciente: ' + error.message));
+    redirect('/pacientes?error=' + q('Falha ao salvar paciente: ' + error.message));
   }
 
-  // sucesso
   revalidatePath('/pacientes');
-  redirect('/pacientes?msg=' + encodeURIComponent('Paciente criado com sucesso.'));
+  redirect('/pacientes?msg=' + q('Paciente criado com sucesso.'));
 }
+
+export async function updatePaciente(id: string, formData: FormData) {
+  const supabase = createClient();
+  const clinicaId = await getCurrentClinicId();
+
+  const registro = String(formData.get('registro') ?? '').trim();
+  const nomeCompleto = String(formData.get('nomeCompleto') ?? '').trim();
+  const cidadeNome = String(formData.get('cidadeNome') ?? '').trim();
+  const alertaTexto = String(formData.get('alertaTexto') ?? '').trim();
+
+  if (!id) redirect('/pacientes?error=' + q('ID inválido.'));
+  if (!registro || !nomeCompleto) {
+    redirect('/pacientes?error=' + q('Informe REG e Nome.'));
+  }
+
+  const { error } = await supabase
+    .from('pacientes')
+    .update({
+      registro,
+      nome_completo: nomeCompleto,
+      cidade_nome: cidadeNome || null,
+      alerta_texto: alertaTexto || null,
+    })
+    .eq('id', id)
+    .eq('clinica_id', clinicaId);
+
+  if (error) {
+    if ((error as any).code === '23505') {
+      redirect('/pacientes?error=' + q(`REG "${registro}" já está em uso nesta clínica.`));
+    }
+    redirect('/pacientes?error=' + q('Falha ao atualizar paciente: ' + error.message));
+  }
+
+  revalidatePath('/pacientes');
+  redirect('/pacientes?msg=' + q('Paciente atualizado com sucesso.'));
+}
+
+/** Aliases para compatibilidade com imports antigos */
+export { createPaciente as createPacienteAction };
+export { updatePaciente as updatePacienteAction };
