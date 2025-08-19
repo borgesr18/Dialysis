@@ -1,200 +1,136 @@
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
-import { uploadDocumento, deleteDocumento } from './documents/_actions';
 
 export const dynamic = 'force-dynamic';
 
-type DocRow = {
+type Paciente = {
   id: string;
-  storage_path: string;
-  tipo: string | null;
-  created_at: string | null;
+  registro: string;
+  nome_completo: string;
+  cidade_nome: string | null;
+  alerta_texto: string | null;
+  ativo: boolean | null;
+  created_at: string;
+  updated_at: string;
 };
 
-export default async function PacienteDetailPage({ params }: { params: { id: string } }) {
-  const clinicaId = await getCurrentClinicId();
-  if (!clinicaId) redirect('/onboarding');
-
+export default async function PacienteDetalhePage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const supabase = createClient();
+  const clinicaId = await getCurrentClinicId();
 
-  // Paciente
   const { data: p, error } = await supabase
     .from('pacientes')
-    .select('id, registro, nome_completo, cidade_nome, alerta_texto, ativo, created_at, updated_at')
+    .select(
+      'id, registro, nome_completo, cidade_nome, alerta_texto, ativo, created_at, updated_at'
+    )
     .eq('id', params.id)
+    .eq('clinica_id', clinicaId)
     .maybeSingle();
-  if (error) throw error;
-  if (!p) return notFound();
 
-  // Documentos (metadados)
-  const { data: docs, error: dErr } = await supabase
-    .from('docs_paciente')
-    .select('id, storage_path, tipo, created_at')
-    .eq('paciente_id', params.id)
-    .order('created_at', { ascending: false });
-  if (dErr) throw dErr;
+  if (error || !p) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-semibold">Paciente</h1>
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error ? `Falha ao carregar: ${error.message}` : 'Paciente não encontrado.'}
+        </div>
+        <Link href="/pacientes" className="text-sm underline">
+          Voltar
+        </Link>
+      </div>
+    );
+  }
 
-  // Gera URLs assinadas (15 minutos) para cada documento
-  const storage = supabase.storage.from('documentos');
-  const signedDocs = await Promise.all(
-    (docs ?? []).map(async (d: DocRow) => {
-      const { data: signed, error: sErr } = await storage.createSignedUrl(d.storage_path, 60 * 15);
-      // Mesmo que falhe o signed, mantemos o item na UI (sem link)
-      return {
-        ...d,
-        url: signed?.signedUrl || null,
-        nome: d.storage_path.split('/').pop() || 'arquivo',
-      };
-    })
-  );
+  const pac = p as Paciente;
 
   return (
-    <div className="space-y-4">
-      {/* Cabeçalho */}
+    <div className="space-y-6">
+      {/* Header + ações */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{p.nome_completo}</h1>
+        <h1 className="text-3xl font-semibold">Paciente {pac.nome_completo}</h1>
         <div className="flex gap-2">
-          <Link className="px-3 py-1.5 rounded-md border hover:bg-gray-50 text-sm" href={`/pacientes/${p.id}/edit`}>
-            <i className="fa-solid fa-pen-to-square mr-1" /> Editar
+          <Link
+            href={`/pacientes/${pac.id}/edit`}
+            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+          >
+            Editar
           </Link>
-          <Link className="px-3 py-1.5 rounded-md border hover:bg-gray-50 text-sm" href="/pacientes">
+          <Link
+            href="/pacientes"
+            className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+          >
             Voltar
           </Link>
         </div>
       </div>
 
-      {/* Dados principais */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="card md:col-span-2">
-          <div className="grid md:grid-cols-2 gap-3">
+      {/* Cards superiores – grid abre em telas largas */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section className="bg-white border rounded-xl p-5 xl:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <div className="text-sm text-neutral-600">Registro (REG)</div>
-              <div className="font-medium">{p.registro}</div>
+              <div className="mt-1 text-xl font-semibold">{pac.registro}</div>
             </div>
+
             <div>
               <div className="text-sm text-neutral-600">Cidade</div>
-              <div className="font-medium">{p.cidade_nome ?? '—'}</div>
+              <div className="mt-1 text-xl font-semibold">{pac.cidade_nome ?? '—'}</div>
             </div>
+
             <div>
               <div className="text-sm text-neutral-600">Status</div>
-              <div className="font-medium">
-                {p.ativo ? (
-                  <span className="chip bg-green-50 text-green-700">Ativo</span>
-                ) : (
-                  <span className="chip bg-gray-100 text-gray-700">Inativo</span>
-                )}
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700 border border-green-200">
+                {pac.ativo === false ? 'Inativo' : 'Ativo'}
               </div>
             </div>
+
             <div>
               <div className="text-sm text-neutral-600">Alerta</div>
-              <div className="font-medium">{p.alerta_texto ?? '—'}</div>
+              <div className="mt-1 text-xl font-semibold">
+                {pac.alerta_texto?.trim() || '—'}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="card">
+        <aside className="bg-white border rounded-xl p-5">
           <div className="text-sm text-neutral-600">Criado</div>
-          <div className="font-medium">{new Date(p.created_at as any).toLocaleString()}</div>
-          <div className="text-sm text-neutral-600 mt-2">Atualizado</div>
-          <div className="font-medium">{new Date(p.updated_at as any).toLocaleString()}</div>
-        </div>
+          <div className="mt-1 font-medium">
+            {new Date(pac.created_at).toLocaleString()}
+          </div>
+          <div className="mt-4 text-sm text-neutral-600">Atualizado</div>
+          <div className="mt-1 font-medium">
+            {new Date(pac.updated_at).toLocaleString()}
+          </div>
+        </aside>
       </div>
 
-      {/* Bloco clínico futuro */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="card md:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Acessos / Prescrições / Serologias</h2>
+      {/* Cards inferiores – abre em 3 colunas em xl */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section className="bg-white border rounded-xl p-5 xl:col-span-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Acessos / Prescrições / Serologias</h2>
             <span className="text-sm text-neutral-500">em breve</span>
           </div>
-          <p className="text-sm text-neutral-600">
+          <p className="mt-3 text-neutral-600 text-sm">
             Aqui listaremos os acessos vasculares, prescrições dialíticas e sorologias.
           </p>
-        </div>
+        </section>
 
-        {/* Documentos do paciente */}
-        <div className="card">
-          <h2 className="font-semibold mb-3">Documentos</h2>
-
-          {/* Upload */}
-          <form
-            action={async (fd) => {
-              'use server';
-              await uploadDocumento(p.id, fd);
-            }}
-            encType="multipart/form-data"
-            className="mb-4"
-          >
-            <input
-              type="file"
-              name="arquivo"
-              accept="application/pdf,image/*"
-              className="block w-full text-sm file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-              required
-            />
-            <div className="flex justify-end mt-2">
-              <button type="submit" className="btn">
-                <i className="fa-solid fa-upload mr-2" />
-                Enviar
-              </button>
-            </div>
-          </form>
-
-          {/* Lista */}
-          <div className="space-y-2">
-            {signedDocs.length === 0 && (
-              <div className="text-sm text-neutral-500">Nenhum documento enviado.</div>
-            )}
-
-            {signedDocs.map((d) => (
-              <div key={d.id} className="flex items-center justify-between p-2 rounded-md border">
-                <div className="min-w-0">
-                  <div className="truncate font-medium text-sm">{d.nome}</div>
-                  <div className="text-xs text-neutral-500">
-                    {(d.tipo ?? 'arquivo')} • {d.created_at ? new Date(d.created_at).toLocaleString() : ''}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {d.url ? (
-                    <a
-                      href={d.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-md border hover:bg-gray-50 text-sm"
-                    >
-                      <i className="fa-solid fa-download mr-1" />
-                      Baixar
-                    </a>
-                  ) : (
-                    <span className="text-xs text-red-600">sem acesso</span>
-                  )}
-
-                  <form
-                    action={async () => {
-                      'use server';
-                      await deleteDocumento(d.id, p.id);
-                    }}
-                  >
-                    <button
-                      type="submit"
-                      className="px-3 py-1.5 rounded-md border hover:bg-red-50 text-sm text-red-600"
-                    >
-                      <i className="fa-solid fa-trash mr-1" />
-                      Excluir
-                    </button>
-                  </form>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-xs text-neutral-500 mt-3">
-            O bucket <code>documentos</code> é privado. Os links de download são assinados e expiram em 15 minutos.
+        <aside className="bg-white border rounded-xl p-5">
+          <h2 className="text-lg font-semibold mb-3">Documentos</h2>
+          {/* Placeholder até o módulo de uploads (Supabase Storage) */}
+          <input type="file" className="block w-full text-sm" />
+          <p className="mt-2 text-sm text-neutral-500">
+            Upload de documentos do paciente (PDF, imagens).
           </p>
-        </div>
+        </aside>
       </div>
     </div>
   );
