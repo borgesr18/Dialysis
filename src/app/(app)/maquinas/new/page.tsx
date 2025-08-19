@@ -8,6 +8,12 @@ async function createMaquina(fd: FormData) {
   const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
 
+  // Verificar se clinica_id existe
+  if (!clinica_id) {
+    redirect('/maquinas?error=' + encodeURIComponent('Clínica não encontrada'));
+    return;
+  }
+
   const sala_id = String(fd.get('sala_id') || '');
   const identificador = String(fd.get('identificador') || '');
   const marca = String(fd.get('marca') || '');
@@ -16,19 +22,22 @@ async function createMaquina(fd: FormData) {
   const ativa = String(fd.get('ativa') || 'true') === 'true';
 
   interface MaquinaPayload {
-    nome: string;
-    modelo?: string;
-    numero_serie?: string;
-    sala_id?: string;
     clinica_id: string;
+    sala_id?: string;
+    identificador: string;
+    marca?: string;
+    modelo?: string;
+    serie?: string;
+    ativa: boolean;
   }
 
   const insertPayload: MaquinaPayload = {
     clinica_id,
-    sala_id,
     identificador,
     ativa,
   };
+  
+  if (sala_id) insertPayload.sala_id = sala_id;
   if (marca) insertPayload.marca = marca;
   if (modelo) insertPayload.modelo = modelo;
   if (serie) insertPayload.serie = serie;
@@ -44,79 +53,122 @@ async function createMaquina(fd: FormData) {
 export default async function NovaMaquinaPage() {
   const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
+  
+  // Verificar se clinica_id existe
+  if (!clinica_id) {
+    redirect('/dashboard?error=' + encodeURIComponent('Clínica não encontrada'));
+    return;
+  }
+  
   const { data: salas } = await supabase
     .from('salas')
     .select('id, nome')
     .eq('clinica_id', clinica_id)
-    .order('nome', { ascending: true });
+    .order('nome');
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Nova Máquina</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Nova Máquina</h1>
         <Link
           href="/maquinas"
-          className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-neutral-700 hover:bg-neutral-50"
+          className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
         >
           Voltar
         </Link>
       </div>
 
-      <form
-        action={createMaquina}
-        className="rounded-xl border border-neutral-200 bg-white p-4 grid gap-3 max-w-2xl md:grid-cols-2"
-      >
-        <div className="grid gap-1.5 md:col-span-2">
-          <label className="text-sm text-neutral-700">Sala</label>
-          <select name="sala_id" className="border rounded-md px-3 py-2" required>
-            <option value="">Selecione a sala</option>
-            {(salas ?? []).map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome}
-              </option>
-            ))}
-          </select>
+      <form action={createMaquina} className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Identificador *
+            </label>
+            <input
+              name="identificador"
+              required
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+              placeholder="Ex: MAQ-001"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Sala
+            </label>
+            <select
+              name="sala_id"
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+            >
+              <option value="">Selecione uma sala</option>
+              {salas?.map((sala) => (
+                <option key={sala.id} value={sala.id}>
+                  {sala.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Marca
+            </label>
+            <input
+              name="marca"
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+              placeholder="Ex: Fresenius"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Modelo
+            </label>
+            <input
+              name="modelo"
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+              placeholder="Ex: 4008S"
+            />
+          </div>
+
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Número de Série
+            </label>
+            <input
+              name="serie"
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+              placeholder="Ex: ABC123456"
+            />
+          </div>
+
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Status
+            </label>
+            <select
+              name="ativa"
+              defaultValue="true"
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+            >
+              <option value="true">Ativa</option>
+              <option value="false">Inativa</option>
+            </select>
+          </div>
         </div>
 
-        <div className="grid gap-1.5">
-          <label className="text-sm text-neutral-700">Identificador</label>
-          <input
-            className="border rounded-md px-3 py-2"
-            name="identificador"
-            placeholder="Ex.: M-01"
-            required
-          />
-        </div>
-
-        <div className="grid gap-1.5">
-          <label className="text-sm text-neutral-700">Marca</label>
-          <input className="border rounded-md px-3 py-2" name="marca" placeholder="Ex.: Fresenius" />
-        </div>
-
-        <div className="grid gap-1.5">
-          <label className="text-sm text-neutral-700">Modelo</label>
-          <input className="border rounded-md px-3 py-2" name="modelo" placeholder="Ex.: 4008S" />
-        </div>
-
-        <div className="grid gap-1.5">
-          <label className="text-sm text-neutral-700">Série</label>
-          <input className="border rounded-md px-3 py-2" name="serie" placeholder="Nº de série" />
-        </div>
-
-        <div className="grid gap-1.5">
-          <label className="text-sm text-neutral-700">Status</label>
-          <select name="ativa" className="border rounded-md px-3 py-2" defaultValue="true">
-            <option value="true">Ativa</option>
-            <option value="false">Inativa</option>
-          </select>
-        </div>
-
-        <div className="pt-2 md:col-span-2">
-          <button
-            className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
-            type="submit"
+        <div className="flex justify-end gap-3 pt-4">
+          <Link
+            href="/maquinas"
+            className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
           >
-            Salvar
+            Cancelar
+          </Link>
+          <button
+            type="submit"
+            className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+          >
+            Criar Máquina
           </button>
         </div>
       </form>
