@@ -28,3 +28,27 @@ export async function requireAdmin() {
   const role = await getMyRole();
   if (role !== 'ADMIN') redirect('/forbidden');
 }
+
+export async function assertRole(...roles: PapelUsuario[]) {
+  const role = await getMyRole();
+  if (!role || !roles.includes(role)) redirect('/forbidden');
+}
+
+type Permission =
+  | 'manage_members';
+
+const rolePermissions: Record<PapelUsuario, Permission[]> = {
+  ADMIN: ['manage_members'],
+  GESTOR: [],
+  ENFERMAGEM: [],
+  TECNICO: [],
+  FARMACIA: [],
+  MEDICO: [],
+  VISUALIZADOR: [],
+};
+
+export async function can(permission: Permission) {
+  const role = await getMyRole();
+  if (!role) return false;
+  return rolePermissions[role]?.includes(permission) ?? false;
+}
