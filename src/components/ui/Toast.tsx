@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
@@ -100,7 +100,7 @@ export function ToastContainer({ successMessage, errorMessage }: ToastContainerP
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Adicionar toasts baseados nas props
-  React.useEffect(() => {
+  useEffect(() => {
     if (successMessage) {
       const id = Math.random().toString(36).substr(2, 9);
       const toast: Toast = {
@@ -117,7 +117,7 @@ export function ToastContainer({ successMessage, errorMessage }: ToastContainerP
     }
   }, [successMessage]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (errorMessage) {
       const id = Math.random().toString(36).substr(2, 9);
       const toast: Toast = {
