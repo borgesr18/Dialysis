@@ -1,10 +1,14 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
+import { getCurrentClinicId } from '@/lib/get-clinic';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PacienteDetailPage({ params }: { params: { id: string } }) {
+  const clinicaId = await getCurrentClinicId();
+  if (!clinicaId) redirect('/onboarding');
+
   const supabase = createClient();
   const { data: p, error } = await supabase
     .from('pacientes')
@@ -33,21 +37,25 @@ export default async function PacienteDetailPage({ params }: { params: { id: str
         <div className="card md:col-span-2">
           <div className="grid md:grid-cols-2 gap-3">
             <div>
-              <div className="label">Registro (REG)</div>
+              <div className="text-sm text-neutral-600">Registro (REG)</div>
               <div className="font-medium">{p.registro}</div>
             </div>
             <div>
-              <div className="label">Cidade</div>
+              <div className="text-sm text-neutral-600">Cidade</div>
               <div className="font-medium">{p.cidade_nome ?? '—'}</div>
             </div>
             <div>
-              <div className="label">Status</div>
+              <div className="text-sm text-neutral-600">Status</div>
               <div className="font-medium">
-                {p.ativo ? <span className="chip bg-green-50 text-green-700">Ativo</span> : <span className="chip bg-gray-100 text-gray-700">Inativo</span>}
+                {p.ativo ? (
+                  <span className="chip bg-green-50 text-green-700">Ativo</span>
+                ) : (
+                  <span className="chip bg-gray-100 text-gray-700">Inativo</span>
+                )}
               </div>
             </div>
             <div>
-              <div className="label">Alerta</div>
+              <div className="text-sm text-neutral-600">Alerta</div>
               <div className="font-medium">{p.alerta_texto ?? '—'}</div>
             </div>
           </div>
@@ -75,7 +83,9 @@ export default async function PacienteDetailPage({ params }: { params: { id: str
 
         <div className="card">
           <h2 className="font-semibold mb-2">Documentos</h2>
-          <p className="text-sm text-neutral-600">Upload/download pelo bucket <code>documentos</code> (em breve).</p>
+          <p className="text-sm text-neutral-600">
+            Upload/download pelo bucket <code>documentos</code> (em breve).
+          </p>
         </div>
       </div>
     </div>
