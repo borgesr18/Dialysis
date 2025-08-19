@@ -1,19 +1,15 @@
-import { redirect } from 'next/navigation';
-import { getCurrentClinicId } from '@/lib/get-clinic';
 import PacienteForm from '../_form';
 import { createPaciente } from '../_actions';
 
 export const dynamic = 'force-dynamic';
 
-export default async function NewPacientePage() {
-  // Garante que o usuário tenha um vínculo antes de abrir o formulário
-  const clinicaId = await getCurrentClinicId();
-  if (!clinicaId) redirect('/onboarding');
-
+export default function NewPacientePage() {
   return (
-    <div className="space-y-4">
+    <div className="p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Novo paciente</h1>
-      <PacienteForm action={createPaciente} cancelHref="/pacientes" submitLabel="Criar" />
+      <div className="rounded-xl border border-neutral-200 bg-white p-4">
+        <PacienteForm action={createPaciente} />
+      </div>
     </div>
   );
 }
