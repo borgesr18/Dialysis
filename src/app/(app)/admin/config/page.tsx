@@ -15,12 +15,23 @@ export default async function AdminConfigPage({ searchParams }: { searchParams?:
   interface Clinica {
     id: string;
     nome: string;
+    cnpj?: string;
+    email?: string;
     endereco?: string;
     telefone?: string;
-    cidade?: string;
+    cidade_nome?: string;
+    uf?: string;
+    fuso_horario?: string;
+    observacoes?: string;
   }
 
-  let clinica: Clinica | null = null;
+  // Buscar dados da clínica
+  const { data: clinica } = await supabase
+    .from('clinicas')
+    .select('*')
+    .eq('id', clinicaId)
+    .single();
+
   const ok = searchParams?.ok;
   const err = searchParams?.error;
 

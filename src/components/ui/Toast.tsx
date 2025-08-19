@@ -90,21 +90,64 @@ export function useToast() {
   return context;
 }
 
-function ToastContainer() {
-  const { toasts } = useToast();
+// Componente ToastContainer para uso independente
+interface ToastContainerProps {
+  successMessage?: string;
+  errorMessage?: string;
+}
+
+export function ToastContainer({ successMessage, errorMessage }: ToastContainerProps = {}) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // Adicionar toasts baseados nas props
+  React.useEffect(() => {
+    if (successMessage) {
+      const id = Math.random().toString(36).substr(2, 9);
+      const toast: Toast = {
+        id,
+        type: 'success',
+        title: successMessage,
+        duration: 5000
+      };
+      setToasts(prev => [...prev, toast]);
+      
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, 5000);
+    }
+  }, [successMessage]);
+
+  React.useEffect(() => {
+    if (errorMessage) {
+      const id = Math.random().toString(36).substr(2, 9);
+      const toast: Toast = {
+        id,
+        type: 'error',
+        title: errorMessage,
+        duration: 7000
+      };
+      setToasts(prev => [...prev, toast]);
+      
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, 7000);
+    }
+  }, [errorMessage]);
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   return (
     <div className="fixed top-4 right-4 z-50 space-y-3 max-w-sm w-full">
       {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} />
+        <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
       ))}
     </div>
   );
 }
 
-function ToastItem({ toast }: { toast: Toast }) {
-  const { removeToast } = useToast();
-
+function ToastItem({ toast, onRemove }: { toast: Toast; onRemove?: (id: string) => void }) {
   const icons = {
     success: CheckCircle,
     error: AlertCircle,
@@ -114,24 +157,24 @@ function ToastItem({ toast }: { toast: Toast }) {
 
   const styles = {
     success: {
-      container: 'bg-white dark:bg-gray-800 border-l-4 border-medical-success-500 shadow-success',
-      icon: 'text-medical-success-600 dark:text-medical-success-400',
-      title: 'text-medical-success-900 dark:text-medical-success-100'
+      container: 'bg-white dark:bg-gray-800 border-l-4 border-green-500 shadow-lg',
+      icon: 'text-green-600 dark:text-green-400',
+      title: 'text-green-900 dark:text-green-100'
     },
     error: {
-      container: 'bg-white dark:bg-gray-800 border-l-4 border-medical-danger-500 shadow-danger',
-      icon: 'text-medical-danger-600 dark:text-medical-danger-400',
-      title: 'text-medical-danger-900 dark:text-medical-danger-100'
+      container: 'bg-white dark:bg-gray-800 border-l-4 border-red-500 shadow-lg',
+      icon: 'text-red-600 dark:text-red-400',
+      title: 'text-red-900 dark:text-red-100'
     },
     warning: {
-      container: 'bg-white dark:bg-gray-800 border-l-4 border-medical-warning-500 shadow-warning',
-      icon: 'text-medical-warning-600 dark:text-medical-warning-400',
-      title: 'text-medical-warning-900 dark:text-medical-warning-100'
+      container: 'bg-white dark:bg-gray-800 border-l-4 border-yellow-500 shadow-lg',
+      icon: 'text-yellow-600 dark:text-yellow-400',
+      title: 'text-yellow-900 dark:text-yellow-100'
     },
     info: {
-      container: 'bg-white dark:bg-gray-800 border-l-4 border-medical-info-500 shadow-medical',
-      icon: 'text-medical-info-600 dark:text-medical-info-400',
-      title: 'text-medical-info-900 dark:text-medical-info-100'
+      container: 'bg-white dark:bg-gray-800 border-l-4 border-blue-500 shadow-lg',
+      icon: 'text-blue-600 dark:text-blue-400',
+      title: 'text-blue-900 dark:text-blue-100'
     }
   };
 
@@ -171,7 +214,7 @@ function ToastItem({ toast }: { toast: Toast }) {
         </div>
         
         <button
-          onClick={() => removeToast(toast.id)}
+          onClick={() => onRemove?.(toast.id)}
           className="flex-shrink-0 ml-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
         >
           <X className="w-4 h-4" />
