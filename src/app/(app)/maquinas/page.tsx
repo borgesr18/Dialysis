@@ -41,8 +41,6 @@ export default async function MaquinasPage() {
       <div className="rounded-xl border border-neutral-200 bg-white overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-              <th className="px-4 py-3">Ações</th>
-
             <tr className="text-left text-neutral-600">
               <th className="px-4 py-3">Sala</th>
               <th className="px-4 py-3">Identificador</th>
@@ -50,6 +48,7 @@ export default async function MaquinasPage() {
               <th className="px-4 py-3">Modelo</th>
               <th className="px-4 py-3">Série</th>
               <th className="px-4 py-3">Ativa</th>
+              <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -57,15 +56,6 @@ export default async function MaquinasPage() {
               <tr key={m.id} className="border-t">
                 <td className="px-4 py-3">{salaNome.get(m.sala_id) ?? '-'}</td>
                 <td className="px-4 py-3">{m.identificador}</td>
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/maquinas/${m.id}/edit`}
-                    className="text-primary-700 hover:underline"
-                  >
-                    Editar
-                  </Link>
-                </td>
-
                 <td className="px-4 py-3">{m.marca ?? '-'}</td>
                 <td className="px-4 py-3">{m.modelo ?? '-'}</td>
                 <td className="px-4 py-3">{m.serie ?? '-'}</td>
@@ -80,11 +70,19 @@ export default async function MaquinasPage() {
                     </span>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/maquinas/${m.id}/edit`}
+                    className="text-primary-700 hover:underline"
+                  >
+                    Editar
+                  </Link>
+                </td>
               </tr>
             ))}
             {(!maquinas || maquinas.length === 0) && (
               <tr>
-                <td className="px-4 py-6 text-neutral-600" colSpan={6}>
+                <td className="px-4 py-6 text-neutral-600" colSpan={7}>
                   Nenhuma máquina cadastrada ainda.
                 </td>
               </tr>
