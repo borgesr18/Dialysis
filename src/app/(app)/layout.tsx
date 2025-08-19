@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { getMyRole } from '@/lib/roles';
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  const role = await getMyRole();
+  const isAdmin = role === 'ADMIN';
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 flex">
-      {/* Sidebar */}
       <aside className="hidden md:flex md:w-64 fixed inset-y-0 left-0 bg-secondary-800 text-white z-30">
         <div className="flex h-full w-full flex-col">
           <div className="p-5 border-b border-secondary-700">
@@ -61,13 +64,33 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <i className="fa-solid fa-clock w-5 text-center" />
               <span>Turnos</span>
             </Link>
+
+            {isAdmin && (
+              <>
+                <p className="px-4 text-xs font-medium text-gray-400 uppercase tracking-wider mt-4 mb-2">
+                  ADMIN
+                </p>
+                <Link
+                  href="/admin/membros"
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-secondary-700 hover:text-white mb-1 transition-colors duration-200"
+                >
+                  <i className="fa-solid fa-users-gear w-5 text-center" />
+                  <span>Membros</span>
+                </Link>
+                <Link
+                  href="/admin/config"
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-secondary-700 hover:text-white mb-1 transition-colors duration-200"
+                >
+                  <i className="fa-solid fa-gear w-5 text-center" />
+                  <span>Configuração</span>
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </aside>
 
-      {/* Main column */}
       <div className="flex-1 md:ml-64 flex flex-col min-w-0">
-        {/* Header */}
         <header className="bg-white py-3 px-4 sm:px-6 lg:px-8 border-b border-gray-200 sticky top-0 z-20">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Pacientes</h2>
@@ -100,7 +123,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* ÚNICO container central e largo */}
         <main className="flex-1">
           <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-6">
             {children}
