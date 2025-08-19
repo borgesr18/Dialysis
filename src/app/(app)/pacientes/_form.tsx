@@ -1,69 +1,54 @@
-'use server';
+'use client';
 
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
-import { getCurrentClinicId } from '@/lib/get-clinic';
+import { useState } from 'react';
+import CitySelect from '@/components/CitySelect';
 
-function reqString(fd: FormData, name: string) {
-  return String(fd.get(name) ?? '').trim();
-}
-
-export async function createPaciente(fd: FormData) {
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
-  if (!clinica_id) throw new Error('Sem vínculo de clínica.');
-
-  const registro = reqString(fd, 'registro');
-  const nome = reqString(fd, 'nome_completo');
-  if (!registro || !nome) throw new Error('Registro e Nome são obrigatórios.');
-
-  const { error } = await supabase.from('pacientes').insert({
-    clinica_id,
-    registro,
-    nome_completo: nome,
-    cidade_nome: reqString(fd, 'cidade_nome') || null,
-    alerta_texto: reqString(fd, 'alerta_texto') || null,
-  });
-
-  if (error) throw error;
-
-  revalidatePath('/pacientes');
-  redirect('/pacientes');
-}
-
-export async function updatePaciente(id: string, fd: FormData) {
-  const supabase = createClient();
-  const nome = reqString(fd, 'nome_completo');
-  if (!nome) throw new Error('Nome é obrigatório.');
-
-  const payload: any = {
-    registro: reqString(fd, 'registro') || null,
-    nome_completo: nome,
-    cidade_nome: reqString(fd, 'cidade_nome') || null,
-    alerta_texto: reqString(fd, 'alerta_texto') || null,
+type Props = {
+  action: (fd: FormData) => void;
+  initial?: {
+    registro?: string | null;
+    nome_completo?: string | null;
+    cidade_nome?: string | null;
+    alerta_texto?: string | null;
   };
+  submitLabel?: string;
+  cancelHref?: string;
+};
 
-  const { error } = await supabase.from('pacientes').update(payload).eq('id', id);
-  if (error) throw error;
+export default function PacienteForm({ action, initial, submitLabel = 'Salvar', cancelHref }: Props) {
+  const [cidade, setCidade] = useState(initial?.cidade_nome ?? '');
 
-  revalidatePath('/pacientes');
-  redirect(`/pacientes/${id}`);
+  return (
+    <form action={action} className="card grid gap-3">
+      <div className="grid md:grid-cols-3 gap-3">
+        <div>
+          <label className="label">Registro (REG)</label>
+          <input name="registro" defaultValue={initial?.registro ?? ''} className="input" placeholder="0001" required />
+        </div>
+        <div className="md:col-span-2">
+          <label className="label">Nome completo</label>
+          <input name="nome_completo" defaultValue={initial?.nome_completo ?? ''} className="input" placeholder="Nome do paciente" required />
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3">
+        <div className="md:col-span-2">
+          <label className="label">Cidade (PE)</label>
+          <CitySelect value={cidade} onChange={setCidade} />
+          <input type="hidden" name="cidade_nome" value={cidade} />
+        </div>
+        <div>
+          <label className="label">Alerta (ex.: isolamento, alergias)</label>
+          <input name="alerta_texto" defaultValue={initial?.alerta_texto ?? ''} className="input" placeholder="Observação/alerta" />
+        </div>
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        {cancelHref && (
+          <a href={cancelHref} className="px-4 py-2 rounded-md border hover:bg-gray-50">Cancelar</a>
+        )}
+        <button className="btn" type="submit">{submitLabel}</button>
+      </div>
+    </form>
+  );
 }
-
-export async function toggleAtivo(id: string, ativo: boolean) {
-  const supabase = createClient();
-  const { error } = await supabase.from('pacientes').update({ ativo }).eq('id', id);
-  if (error) throw error;
-  revalidatePath('/pacientes');
-}
-
-export async function removePaciente(id: string) {
-  const supabase = createClient();
-  const { error } = await supabase.from('pacientes').delete().eq('id', id);
-  if (error) throw error;
-  revalidatePath('/pacientes');
-  redirect('/pacientes');
-}
-
-
