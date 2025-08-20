@@ -15,7 +15,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               <i className="fa-solid fa-hospital text-primary-400 text-2xl" />
               <div>
                 <h1 className="text-lg font-bold">NephroConnect</h1>
-                <p className="text-xs text-gray-400">Dialysis Management</p>
+                <p className="text-xs text-gray-400">Sistema de Diálise</p>
               </div>
             </div>
           </div>

@@ -46,15 +46,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Hospital className="text-primary-400 text-2xl" />
             <div>
               <h1 className="text-lg font-bold">NephroConnect</h1>
-              <p className="text-xs text-gray-400">Dialysis Management</p>
+              <p className="text-xs text-gray-400">Sistema de Diálise</p>
             </div>
           </div>
         </div>
 
         <div className="py-4 px-2">
-          <p className="px-4 text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
-            MAIN MENU
-          </p>
+
 
           {MENU.map((m) => {
             const active = pathname?.startsWith(m.href);
@@ -76,9 +74,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
 
-          <p className="px-4 text-xs font-medium text-gray-400 uppercase tracking-wider mt-6 mb-2">
-            SETTINGS
-          </p>
+
           <button className="flex w-full items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-secondary-700 hover:text-white dark:hover:bg-gray-700 transition-colors duration-200">
             <Settings className="w-5 h-5" />
             <span>Configurações</span>

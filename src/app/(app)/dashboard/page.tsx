@@ -2,8 +2,9 @@
 
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
+import { LinkButton } from '@/components/ui/LinkButton'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Users, Activity, Calendar, Settings, Plus, LogOut, Building } from 'lucide-react'
+import { Users, Activity, Calendar, Settings, Plus, LogOut, Building, Monitor, MapPin, Clock } from 'lucide-react'
 import Link from 'next/link'
 
 export default function DashboardPage() {
@@ -24,22 +25,23 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Bem-vindo ao Sistema de Diálise
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+            <Activity className="w-8 h-8 mr-3 text-blue-500" />
+            Sistema de Diálise
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             Olá, {user.email}! Gerencie sua clínica de forma eficiente.
           </p>
           {clinicId && (
             <div className="flex items-center gap-2 mt-2">
-              <Building className="h-4 w-4 text-blue-600" />
-              <p className="text-sm text-blue-600">
+              <Building className="h-4 w-4 text-blue-500" />
+              <p className="text-sm text-blue-600 dark:text-blue-400">
                 Clínica ID: {clinicId}
               </p>
             </div>
           )}
         </div>
-        <Button onClick={signOut} variant="outline" className="flex items-center gap-2">
+        <Button onClick={signOut} variant="outline" className="flex items-center gap-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
           <LogOut className="h-4 w-4" />
           Sair
         </Button>
@@ -48,69 +50,81 @@ export default function DashboardPage() {
       {/* Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Link href="/pacientes">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Pacientes
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Gerenciar pacientes
-              </p>
+          <Card className="bg-gradient-medical hover:shadow-glow transition-all duration-200 cursor-pointer border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Users className="h-8 w-8 text-blue-500" />
+                    <h3 className="text-lg font-semibold text-white">
+                      Pacientes
+                    </h3>
+                  </div>
+                  <p className="text-blue-100 text-sm">
+                    Gerenciar pacientes da clínica
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </Link>
 
         <Link href="/maquinas">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Máquinas
-              </CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Gerenciar máquinas
-              </p>
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 hover:shadow-glow transition-all duration-200 cursor-pointer border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Monitor className="h-8 w-8 text-green-100" />
+                    <h3 className="text-lg font-semibold text-white">
+                      Máquinas
+                    </h3>
+                  </div>
+                  <p className="text-green-100 text-sm">
+                    Gerenciar equipamentos de diálise
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </Link>
 
         <Link href="/salas">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Salas
-              </CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Gerenciar salas
-              </p>
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 hover:shadow-glow transition-all duration-200 cursor-pointer border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <MapPin className="h-8 w-8 text-purple-100" />
+                    <h3 className="text-lg font-semibold text-white">
+                      Salas
+                    </h3>
+                  </div>
+                  <p className="text-purple-100 text-sm">
+                    Gerenciar salas de tratamento
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </Link>
 
         <Link href="/turnos">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Turnos
-              </CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Gerenciar turnos
-              </p>
+          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 hover:shadow-glow transition-all duration-200 cursor-pointer border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Clock className="h-8 w-8 text-orange-100" />
+                    <h3 className="text-lg font-semibold text-white">
+                      Turnos
+                    </h3>
+                  </div>
+                  <p className="text-orange-100 text-sm">
+                    Gerenciar horários de funcionamento
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </Link>
@@ -118,46 +132,57 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Ações Rápidas</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Ações Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/pacientes?action=new">
-            <Button className="w-full flex items-center gap-2">
-              <Plus className="h-4 w-4" />
+          <Card className="p-4 hover:shadow-md transition-shadow">
+            <LinkButton href="/pacientes/new" className="w-full text-white bg-gradient-medical hover:shadow-glow transition-all duration-200">
+              <Users className="h-4 w-4 mr-2 text-blue-100" />
               Novo Paciente
-            </Button>
-          </Link>
-          <Link href="/maquinas?action=new">
-            <Button className="w-full flex items-center gap-2" variant="outline">
-              <Plus className="h-4 w-4" />
+            </LinkButton>
+          </Card>
+          <Card className="p-4 hover:shadow-md transition-shadow">
+            <LinkButton href="/maquinas/new" className="w-full text-white bg-gradient-to-r from-green-500 to-green-600 hover:shadow-glow transition-all duration-200">
+              <Monitor className="h-4 w-4 mr-2 text-green-100" />
               Nova Máquina
-            </Button>
-          </Link>
-          <Link href="/salas?action=new">
-            <Button className="w-full flex items-center gap-2" variant="outline">
-              <Plus className="h-4 w-4" />
+            </LinkButton>
+          </Card>
+          <Card className="p-4 hover:shadow-md transition-shadow">
+            <LinkButton href="/salas/new" className="w-full text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:shadow-glow transition-all duration-200">
+              <MapPin className="h-4 w-4 mr-2 text-purple-100" />
               Nova Sala
-            </Button>
-          </Link>
-          <Link href="/turnos?action=new">
-            <Button className="w-full flex items-center gap-2" variant="outline">
-              <Plus className="h-4 w-4" />
+            </LinkButton>
+          </Card>
+          <Card className="p-4 hover:shadow-md transition-shadow">
+            <LinkButton href="/turnos/new" className="w-full text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-glow transition-all duration-200">
+              <Clock className="h-4 w-4 mr-2 text-orange-100" />
               Novo Turno
-            </Button>
-          </Link>
+            </LinkButton>
+          </Card>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <Card>
+      <Card className="hover:shadow-md transition-shadow">
         <CardHeader>
-          <CardTitle>Atividade Recente</CardTitle>
-          <CardDescription>
+          <CardTitle className="flex items-center text-gray-900 dark:text-gray-100">
+            <Activity className="w-5 h-5 mr-2 text-blue-500" />
+            Atividade Recente
+          </CardTitle>
+          <CardDescription className="text-gray-500 dark:text-gray-400">
             Últimas ações realizadas no sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-gray-500 py-8">
-            Nenhuma atividade recente encontrada.
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Activity className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              Nenhuma atividade recente
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              As ações realizadas no sistema aparecerão aqui.
+            </p>
           </div>
         </CardContent>
       </Card>

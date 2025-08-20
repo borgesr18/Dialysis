@@ -20,7 +20,7 @@ async function createMaquina(fd: FormData) {
   const identificador = String(fd.get('identificador') || '');
   const marca = String(fd.get('marca') || '');
   const modelo = String(fd.get('modelo') || '');
-  const serie = String(fd.get('serie') || '');
+  const numero_serie = String(fd.get('numero_serie') || '');
   const ativa = String(fd.get('ativa') || 'true') === 'true';
 
   interface MaquinaPayload {
@@ -29,7 +29,7 @@ async function createMaquina(fd: FormData) {
     identificador: string;
     marca?: string;
     modelo?: string;
-    serie?: string;
+    numero_serie?: string;
     ativa: boolean;
   }
 
@@ -42,7 +42,7 @@ async function createMaquina(fd: FormData) {
   if (sala_id) insertPayload.sala_id = sala_id;
   if (marca) insertPayload.marca = marca;
   if (modelo) insertPayload.modelo = modelo;
-  if (serie) insertPayload.serie = serie;
+  if (numero_serie) insertPayload.numero_serie = numero_serie;
 
   const { error } = await supabase.from('maquinas').insert(insertPayload);
 
@@ -140,7 +140,7 @@ export default async function NovaMaquinaPage() {
               Número de Série
             </label>
             <input
-              name="serie"
+              name="numero_serie"
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
               placeholder="Ex: ABC123456"
             />

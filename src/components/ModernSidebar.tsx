@@ -11,8 +11,8 @@ import {
   Users,
   Calendar,
   Building,
-  Clock,
   Settings,
+  Clock,
   UserCog,
   Cog,
   LogOut
@@ -24,17 +24,17 @@ interface SidebarProps {
 }
 
 const MAIN_MENU = [
-  { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-  { href: '/pacientes', label: 'Pacientes', icon: Users },
-  { href: '/agenda', label: 'Agenda', icon: Calendar },
-  { href: '/salas', label: 'Salas', icon: Building },
-  { href: '/maquinas', label: 'Máquinas', icon: Clock },
-  { href: '/turnos', label: 'Turnos', icon: Clock },
+  { href: '/dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-400' },
+  { href: '/pacientes', label: 'Pacientes', icon: Users, color: 'text-blue-400' },
+  { href: '/agenda', label: 'Agenda', icon: Calendar, color: 'text-purple-400' },
+  { href: '/salas', label: 'Salas', icon: Building, color: 'text-purple-400' },
+  { href: '/maquinas', label: 'Máquinas', icon: Settings, color: 'text-green-400' },
+  { href: '/turnos', label: 'Turnos', icon: Clock, color: 'text-orange-400' },
 ];
 
 const ADMIN_MENU = [
-  { href: '/admin/membros', label: 'Membros', icon: UserCog },
-  { href: '/admin/config', label: 'Configuração', icon: Cog },
+  { href: '/admin/membros', label: 'Membros', icon: UserCog, color: 'text-cyan-400' },
+  { href: '/admin/config', label: 'Configuração', icon: Cog, color: 'text-cyan-400' },
 ];
 
 export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
@@ -50,8 +50,8 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
         className={clsx(
           'flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
           isActive
-            ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-medical'
-            : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+            ? 'bg-gradient-medical text-white shadow-glow transform scale-105'
+            : 'text-gray-300 hover:bg-gradient-to-r hover:from-gray-700/50 hover:to-gray-600/50 hover:text-white hover:shadow-soft hover:scale-102'
         )}
       >
         {/* Active Background Animation */}
@@ -64,7 +64,12 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
           'relative z-10 p-1 rounded-lg transition-all duration-300',
           isActive && 'animate-bounce-gentle'
         )}>
-          <Icon className="w-5 h-5" />
+          <Icon className={clsx(
+            'w-5 h-5 transition-all duration-300',
+            isActive 
+              ? 'text-white drop-shadow-lg' 
+              : `${item.color} group-hover:text-white group-hover:drop-shadow-lg`
+          )} />
         </div>
         
         {/* Label */}
@@ -72,6 +77,16 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
           <span className="relative z-10 font-medium animate-fade-in">
             {item.label}
           </span>
+        )}
+        
+        {/* Active indicator with glow */}
+        {isActive && (
+          <div className="absolute right-3 w-2 h-2 bg-white rounded-full shadow-glow animate-pulse" />
+        )}
+        
+        {/* Hover shimmer effect */}
+        {!isActive && (
+          <div className="absolute inset-0 bg-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         )}
         
         {/* Tooltip for collapsed state */}
@@ -91,27 +106,18 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
       isOpen ? 'w-64' : 'w-16'
     )}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-700/50">
+      <div className="p-6 border-b border-gray-700/50">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <div className={clsx(
-            'flex items-center space-x-3 transition-all duration-300',
-            !isOpen && 'justify-center'
-          )}>
-            <div className="relative">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-glow animate-float">
-                <Hospital className="w-6 h-6 text-white" />
-              </div>
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl opacity-20 blur-lg animate-pulse"></div>
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-gradient-medical rounded-xl shadow-glow transition-all duration-300 hover:shadow-glow-success hover:scale-105">
+              <Hospital className="h-6 w-6 text-white" />
             </div>
-            
             {isOpen && (
-              <div className="animate-fade-in">
-                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              <div className="transition-all duration-300 animate-fade-in">
+                <h1 className="text-xl font-bold text-white bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                   NephroConnect
                 </h1>
-                <p className="text-xs text-gray-400">Dialysis Management</p>
+                <p className="text-sm text-gray-400 font-medium">Sistema de Diálise</p>
               </div>
             )}
           </div>
@@ -119,60 +125,43 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
           {/* Toggle Button */}
           <button
             onClick={onToggle}
-            className={clsx(
-              'p-2 rounded-lg hover:bg-gray-700/50 transition-all duration-200 group',
-              !isOpen && 'mx-auto mt-2'
-            )}
+            className="p-2 rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 transition-all duration-300 shadow-soft hover:shadow-glow hover:scale-110 group"
           >
             {isOpen ? (
-              <ChevronLeft className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <ChevronLeft className="w-4 h-4 text-gray-300 group-hover:text-white transition-colors duration-300" />
             ) : (
-              <ChevronRight className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-white transition-colors duration-300" />
             )}
           </button>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-6 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-2 overflow-y-auto">
         {/* Main Menu */}
-        <div>
-          {isOpen && (
-            <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3 animate-fade-in">
-              Menu Principal
-            </p>
-          )}
-          <div className="space-y-1">
-            {MAIN_MENU.map((item) => (
-              <MenuItem key={item.href} item={item} />
-            ))}
-          </div>
+        <div className="space-y-1">
+          {MAIN_MENU.map((item) => (
+            <MenuItem key={item.href} item={item} />
+          ))}
         </div>
 
         {/* Admin Menu */}
-        <div>
-          {isOpen && (
-            <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3 animate-fade-in">
-              Administração
-            </p>
-          )}
-          <div className="space-y-1">
-            {ADMIN_MENU.map((item) => (
-              <MenuItem key={item.href} item={item} isAdmin />
-            ))}
-          </div>
+        <div className="space-y-1 pt-4 border-t border-gray-700/30">
+          {ADMIN_MENU.map((item) => (
+            <MenuItem key={item.href} item={item} isAdmin />
+          ))}
         </div>
       </nav>
 
       {/* Footer */}
       <div className="p-3 border-t border-gray-700/50">
         <button className={clsx(
-          'flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-red-600/20 hover:text-red-400 w-full group',
+          'flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-300 text-gray-300 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-500/20 hover:text-red-400 w-full group hover:shadow-soft',
           !isOpen && 'justify-center'
         )}>
-          <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          <LogOut className="w-5 h-5 transition-all duration-300 group-hover:scale-110" />
           {isOpen && (
-            <span className="font-medium animate-fade-in">Sair</span>
+            <span className="font-medium transition-all duration-300">Sair</span>
           )}
           
           {/* Tooltip for collapsed state */}

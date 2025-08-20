@@ -35,12 +35,12 @@ export default function PacienteForm({
       </div>
 
       <div className="grid gap-1.5">
-        <label htmlFor="nomeCompleto" className="text-sm text-neutral-700">
+        <label htmlFor="nome_completo" className="text-sm text-neutral-700">
           Nome completo
         </label>
         <input
-          id="nomeCompleto"
-          name="nomeCompleto"
+          id="nome_completo"
+          name="nome_completo"
           defaultValue={defaults?.nomeCompleto ?? ''}
           autoComplete="name"
           required
@@ -52,16 +52,16 @@ export default function PacienteForm({
       <div className="grid gap-1.5">
         <label className="text-sm text-neutral-700">Cidade (PE)</label>
         <CitySelect value={cidade} onChange={setCidade} />
-        <input type="hidden" name="cidadeNome" value={cidade} />
+        <input type="hidden" name="cidade_nome" value={cidade} />
       </div>
 
       <div className="grid gap-1.5">
-        <label htmlFor="alertaTexto" className="text-sm text-neutral-700">
+        <label htmlFor="alerta_texto" className="text-sm text-neutral-700">
           Observações / Alertas
         </label>
         <textarea
-          id="alertaTexto"
-          name="alertaTexto"
+          id="alerta_texto"
+          name="alerta_texto"
           defaultValue={defaults?.alertaTexto ?? ''}
           className="border rounded-md px-3 py-2 min-h-[80px]"
           placeholder="Alergias, isolamento, particularidades..."

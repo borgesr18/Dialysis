@@ -12,7 +12,7 @@ async function updateMaquina(id: string, fd: FormData) {
   const identificador = String(fd.get('identificador') || '').trim();
   const marca = String(fd.get('marca') || '').trim();
   const modelo = String(fd.get('modelo') || '').trim();
-  const serie = String(fd.get('serie') || '').trim();
+  const numero_serie = String(fd.get('numero_serie') || '').trim();
   const ativa = String(fd.get('ativa') || 'true') === 'true';
 
   if (!identificador) {
@@ -26,7 +26,7 @@ async function updateMaquina(id: string, fd: FormData) {
   };
   if (marca) payload.marca = marca;
   if (modelo) payload.modelo = modelo;
-  if (serie) payload.serie = serie;
+  if (numero_serie) payload.numero_serie = numero_serie;
 
   const { error } = await supabase
     .from('maquinas')
@@ -54,7 +54,7 @@ export default async function EditarMaquinaPage({ params }: { params: { id: stri
   const [{ data: maquina }, { data: salas }] = await Promise.all([
     supabase
       .from('maquinas')
-      .select('id, sala_id, identificador, marca, modelo, serie, ativa')
+      .select('id, sala_id, identificador, marca, modelo, numero_serie, ativa')
       .eq('id', params.id)
       .eq('clinica_id', clinica_id)
       .maybeSingle(),
@@ -124,7 +124,7 @@ export default async function EditarMaquinaPage({ params }: { params: { id: stri
 
         <div className="grid gap-1.5">
           <label className="text-sm text-neutral-700">Série</label>
-          <input className="border rounded-md px-3 py-2" name="serie" defaultValue={maquina.serie ?? ''} />
+          <input className="border rounded-md px-3 py-2" name="numero_serie" defaultValue={maquina.numero_serie ?? ''} />
         </div>
 
         <div className="grid gap-1.5">
