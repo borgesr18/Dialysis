@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase-client';
-import { createAdminClient } from '@/lib/supabase-admin';
 import { Database } from '@/types/database';
 import { Maquina, MaquinaInsert, MaquinaUpdate } from '@/types/database';
 
@@ -9,7 +8,13 @@ export class MaquinasService {
 
   constructor(isServer = false) {
     this.isServer = isServer;
-    this.supabase = isServer ? createAdminClient() : createClient();
+    if (isServer && typeof window === 'undefined') {
+      // Importação dinâmica apenas no servidor
+      const { createAdminClient } = require('@/lib/supabase-admin');
+      this.supabase = createAdminClient();
+    } else {
+      this.supabase = createClient();
+    }
   }
 
   // Listar todas as máquinas de uma clínica

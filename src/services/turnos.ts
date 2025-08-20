@@ -1,6 +1,5 @@
 import { Database } from '@/types/database';
 import { createClient } from '@/lib/supabase-client';
-import { createAdminClient } from '@/lib/supabase-admin';
 import { Turno, TurnoInsert, TurnoUpdate } from '@/types/database';
 
 export class TurnosService {
@@ -9,7 +8,13 @@ export class TurnosService {
 
   constructor(isServer = false) {
     this.isServer = isServer;
-    this.supabase = isServer ? createAdminClient() : createClient();
+    if (isServer && typeof window === 'undefined') {
+      // Importação dinâmica apenas no servidor
+      const { createAdminClient } = require('@/lib/supabase-admin');
+      this.supabase = createAdminClient();
+    } else {
+      this.supabase = createClient();
+    }
   }
 
   // Listar todos os turnos de uma clínica

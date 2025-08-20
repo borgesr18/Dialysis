@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase-client';
-import { createAdminClient } from '@/lib/supabase-admin';
 import { Paciente, PacienteInsert, PacienteUpdate } from '@/types/database';
 
 export class PacientesService {
@@ -8,7 +7,13 @@ export class PacientesService {
 
   constructor(isServer = false) {
     this.isServer = isServer;
-    this.supabase = isServer ? createAdminClient() : createClient();
+    if (isServer && typeof window === 'undefined') {
+      // Importação dinâmica apenas no servidor
+      const { createAdminClient } = require('@/lib/supabase-admin');
+      this.supabase = createAdminClient();
+    } else {
+      this.supabase = createClient();
+    }
   }
 
   // Listar todos os pacientes de uma clínica
