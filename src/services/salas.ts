@@ -31,14 +31,13 @@ export class SalasService {
     }
   }
 
-  // Listar apenas salas ativas
+  // Listar apenas salas ativas (todas as salas são consideradas ativas por padrão)
   async listarSalasAtivas(clinicaId: string): Promise<{ data: Sala[] | null; error: any }> {
     try {
       const { data, error } = await this.supabase
         .from('salas')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .eq('ativa', true)
         .order('nome', { ascending: true });
 
       return { data, error };
@@ -84,10 +83,7 @@ export class SalasService {
     try {
       const { data, error } = await this.supabase
         .from('salas')
-        .insert({
-          ...sala,
-          ativa: sala.ativa !== undefined ? sala.ativa : true
-        })
+        .insert(sala)
         .select()
         .single();
 
@@ -117,18 +113,15 @@ export class SalasService {
     }
   }
 
-  // Ativar/Desativar sala
+  // Ativar/Desativar sala (funcionalidade não disponível - campo não existe)
   async alterarStatusSala(id: string, ativa: boolean, clinicaId: string): Promise<{ data: Sala | null; error: any }> {
     try {
+      // Como o campo 'ativa' não existe na tabela, apenas retornamos a sala atual
       const { data, error } = await this.supabase
         .from('salas')
-        .update({
-          ativa,
-          updated_at: new Date().toISOString()
-        })
+        .select('*')
         .eq('id', id)
         .eq('clinica_id', clinicaId)
-        .select()
         .single();
 
       return { data, error };
@@ -177,7 +170,7 @@ export class SalasService {
     }
   }
 
-  // Contar salas ativas e inativas
+  // Contar salas (todas são consideradas ativas)
   async contarSalas(clinicaId: string): Promise<{ 
     ativas: number; 
     inativas: number; 
@@ -187,23 +180,19 @@ export class SalasService {
     try {
       const { data, error } = await this.supabase
         .from('salas')
-        .select('ativa')
+        .select('id')
         .eq('clinica_id', clinicaId);
 
       if (error) {
         return { ativas: 0, inativas: 0, total: 0, error };
       }
 
+      const total = data?.length || 0;
       const counts = {
-        ativas: 0,
+        ativas: total, // Todas as salas são consideradas ativas
         inativas: 0,
-        total: data?.length || 0
+        total
       };
-
-      data?.forEach((sala: any) => {
-        if (sala.ativa) counts.ativas++;
-        else counts.inativas++;
-      });
 
       return { ...counts, error: null };
     } catch (error) {
@@ -211,24 +200,11 @@ export class SalasService {
     }
   }
 
-  // Calcular capacidade total das salas ativas
+  // Calcular capacidade total das salas (funcionalidade não disponível - campo não existe)
   async calcularCapacidadeTotal(clinicaId: string): Promise<{ capacidade: number; error: any }> {
     try {
-      const { data, error } = await this.supabase
-        .from('salas')
-        .select('capacidade')
-        .eq('clinica_id', clinicaId)
-        .eq('ativa', true);
-
-      if (error) {
-        return { capacidade: 0, error };
-      }
-
-      const capacidadeTotal = data?.reduce((total: any, sala: any) => {
-        return total + (sala.capacidade || 0);
-      }, 0) || 0;
-
-      return { capacidade: capacidadeTotal, error: null };
+      // Como o campo 'capacidade' não existe na tabela, retornamos 0
+      return { capacidade: 0, error: null };
     } catch (error) {
       return { capacidade: 0, error };
     }
@@ -250,9 +226,10 @@ export class SalasService {
         .select('*', { count: 'exact' })
         .eq('clinica_id', clinicaId);
 
-      if (apenasAtivas) {
-        query = query.eq('ativa', true);
-      }
+      // Campo 'ativa' não existe na tabela, ignoramos o filtro
+      // if (apenasAtivas) {
+      //   query = query.eq('ativa', true);
+      // }
 
       if (search) {
         query = query.or(`nome.ilike.%${search}%,descricao.ilike.%${search}%`);
@@ -276,7 +253,6 @@ export class SalasService {
         .select('id')
         .eq('sala_id', id)
         .eq('clinica_id', clinicaId)
-        .eq('ativa', true)
         .limit(1);
 
       if (error) {

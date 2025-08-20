@@ -111,27 +111,25 @@ export default async function MaquinasPage({ searchParams }: { searchParams?: Se
                       <div className="flex items-center">
                         <Activity className="h-5 w-5 text-blue-500 mr-3" />
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {maquina.numero}
+                          {maquina.identificador}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-gray-100">{maquina.modelo}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{maquina.fabricante}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{maquina.marca || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                         maquina.status === 'ativa' 
-                           ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                           : maquina.status === 'manutencao'
-                           ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
-                           : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                       }`}>
-                         {maquina.status === 'ativa' ? 'Ativa' : maquina.status === 'manutencao' ? 'Manutenção' : 'Inativa'}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          maquina.ativa
+                            ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                            : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                        }`}>
+                         {maquina.ativa ? 'Ativa' : 'Inativa'}
                        </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                       {maquina.observacoes || 'N/A'}
+                       N/A
                      </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">

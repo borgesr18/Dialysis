@@ -32,14 +32,13 @@ export class TurnosService {
     }
   }
 
-  // Listar apenas turnos ativos
+  // Listar apenas turnos ativos (todos os turnos são considerados ativos por padrão)
   async listarTurnosAtivos(clinicaId: string): Promise<{ data: Turno[] | null; error: any }> {
     try {
       const { data, error } = await this.supabase
         .from('turnos')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .eq('ativo', true)
         .order('hora_inicio', { ascending: true });
 
       return { data, error };
@@ -87,7 +86,7 @@ export class TurnosService {
         .from('turnos')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .eq('ativo', true)
+
         .contains('dias_semana', [diaSemana])
         .order('hora_inicio', { ascending: true });
 
@@ -102,10 +101,7 @@ export class TurnosService {
     try {
       const { data, error } = await this.supabase
         .from('turnos')
-        .insert({
-          ...turno,
-          ativo: turno.ativo !== undefined ? turno.ativo : true
-        })
+        .insert(turno)
         .select()
         .single();
 
@@ -135,18 +131,15 @@ export class TurnosService {
     }
   }
 
-  // Ativar/Desativar turno
+  // Ativar/Desativar turno (funcionalidade não disponível - campo não existe)
   async alterarStatusTurno(id: string, ativo: boolean, clinicaId: string): Promise<{ data: Turno | null; error: any }> {
     try {
+      // Como o campo 'ativo' não existe na tabela, apenas retornamos o turno atual
       const { data, error } = await this.supabase
         .from('turnos')
-        .update({
-          ativo,
-          updated_at: new Date().toISOString()
-        })
+        .select('*')
         .eq('id', id)
         .eq('clinica_id', clinicaId)
-        .select()
         .single();
 
       return { data, error };
@@ -208,7 +201,7 @@ export class TurnosService {
         .from('turnos')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .eq('ativo', true);
+  ;
 
       if (excludeId) {
         query = query.neq('id', excludeId);
@@ -253,7 +246,7 @@ export class TurnosService {
     }
   }
 
-  // Contar turnos ativos e inativos
+  // Contar turnos (todos são considerados ativos)
   async contarTurnos(clinicaId: string): Promise<{ 
     ativos: number; 
     inativos: number; 
@@ -263,23 +256,19 @@ export class TurnosService {
     try {
       const { data, error } = await this.supabase
         .from('turnos')
-        .select('ativo')
+        .select('id')
         .eq('clinica_id', clinicaId);
 
       if (error) {
         return { ativos: 0, inativos: 0, total: 0, error };
       }
 
+      const total = data?.length || 0;
       const counts = {
-        ativos: 0,
+        ativos: total, // Todos os turnos são considerados ativos
         inativos: 0,
-        total: data?.length || 0
+        total
       };
-
-      data?.forEach((turno: any) => {
-        if (turno.ativo) counts.ativos++;
-        else counts.inativos++;
-      });
 
       return { ...counts, error: null };
     } catch (error) {
@@ -303,9 +292,10 @@ export class TurnosService {
         .select('*', { count: 'exact' })
         .eq('clinica_id', clinicaId);
 
-      if (apenasAtivos) {
-        query = query.eq('ativo', true);
-      }
+      // Campo 'ativo' não existe na tabela, ignoramos o filtro
+      // if (apenasAtivos) {
+      //   query = query.eq('ativo', true);
+      // }
 
       if (search) {
         query = query.ilike('nome', `%${search}%`);
@@ -329,7 +319,6 @@ export class TurnosService {
         .select('id')
         .eq('turno_id', id)
         .eq('clinica_id', clinicaId)
-        .eq('ativa', true)
         .limit(1);
 
       if (error) {
@@ -351,7 +340,6 @@ export class TurnosService {
         .from('turnos')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .eq('ativo', true)
         .contains('dias_semana', [hoje])
         .order('hora_inicio', { ascending: true });
 

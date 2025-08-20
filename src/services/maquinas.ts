@@ -24,7 +24,7 @@ export class MaquinasService {
         .from('maquinas')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .order('numero', { ascending: true });
+        .order('identificador', { ascending: true });
 
       return { data, error };
     } catch (error) {
@@ -55,8 +55,8 @@ export class MaquinasService {
         .from('maquinas')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .or(`numero.ilike.%${termo}%,modelo.ilike.%${termo}%,fabricante.ilike.%${termo}%`)
-        .order('numero', { ascending: true });
+        .or(`identificador.ilike.%${termo}%,modelo.ilike.%${termo}%,fabricante.ilike.%${termo}%`)
+        .order('identificador', { ascending: true });
 
       return { data, error };
     } catch (error) {
@@ -65,14 +65,14 @@ export class MaquinasService {
   }
 
   // Listar máquinas por status
-  async listarMaquinasPorStatus(status: 'ativa' | 'manutencao' | 'inativa', clinicaId: string): Promise<{ data: Maquina[] | null; error: any }> {
+  async listarMaquinasPorStatus(ativa: boolean, clinicaId: string): Promise<{ data: Maquina[] | null; error: any }> {
     try {
       const { data, error } = await this.supabase
         .from('maquinas')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .eq('status', status)
-        .order('numero', { ascending: true });
+        .eq('ativa', ativa)
+        .order('identificador', { ascending: true });
 
       return { data, error };
     } catch (error) {
@@ -85,10 +85,7 @@ export class MaquinasService {
     try {
       const { data, error } = await this.supabase
         .from('maquinas')
-        .insert({
-          ...maquina,
-          status: maquina.status || 'ativa'
-        })
+        .insert(maquina)
         .select()
         .single();
 
@@ -119,12 +116,12 @@ export class MaquinasService {
   }
 
   // Alterar status da máquina
-  async alterarStatusMaquina(id: string, status: 'ativa' | 'manutencao' | 'inativa', clinicaId: string): Promise<{ data: Maquina | null; error: any }> {
+  async alterarStatusMaquina(id: string, ativa: boolean, clinicaId: string): Promise<{ data: Maquina | null; error: any }> {
     try {
       const { data, error } = await this.supabase
         .from('maquinas')
         .update({
-          status,
+          ativa,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -160,7 +157,7 @@ export class MaquinasService {
         .from('maquinas')
         .select('id')
         .eq('clinica_id', clinicaId)
-        .eq('numero', numero);
+        .eq('identificador', numero);
 
       if (excludeId) {
         query = query.neq('id', excludeId);
@@ -181,7 +178,6 @@ export class MaquinasService {
   // Contar máquinas por status
   async contarMaquinasPorStatus(clinicaId: string): Promise<{ 
     ativas: number; 
-    manutencao: number; 
     inativas: number; 
     total: number; 
     error: any 
@@ -189,29 +185,27 @@ export class MaquinasService {
     try {
       const { data, error } = await this.supabase
         .from('maquinas')
-        .select('status')
+        .select('ativa')
         .eq('clinica_id', clinicaId);
 
       if (error) {
-        return { ativas: 0, manutencao: 0, inativas: 0, total: 0, error };
+        return { ativas: 0, inativas: 0, total: 0, error };
       }
 
       const counts = {
         ativas: 0,
-        manutencao: 0,
         inativas: 0,
         total: data?.length || 0
       };
 
       data?.forEach((maquina: any) => {
-        if (maquina.status === 'ativa') counts.ativas++;
-        else if (maquina.status === 'manutencao') counts.manutencao++;
-        else if (maquina.status === 'inativa') counts.inativas++;
+        if (maquina.ativa === true) counts.ativas++;
+        else if (maquina.ativa === false) counts.inativas++;
       });
 
       return { ...counts, error: null };
     } catch (error) {
-      return { ativas: 0, manutencao: 0, inativas: 0, total: 0, error };
+      return { ativas: 0, inativas: 0, total: 0, error };
     }
   }
 
@@ -221,7 +215,7 @@ export class MaquinasService {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    status?: 'ativa' | 'manutencao' | 'inativa'
+    ativa?: boolean
   ): Promise<{ data: Maquina[] | null; count: number; error: any }> {
     try {
       const offset = (page - 1) * limit;
@@ -231,16 +225,16 @@ export class MaquinasService {
         .select('*', { count: 'exact' })
         .eq('clinica_id', clinicaId);
 
-      if (status) {
-        query = query.eq('status', status);
+      if (ativa !== undefined) {
+        query = query.eq('ativa', ativa);
       }
 
       if (search) {
-        query = query.or(`numero.ilike.%${search}%,modelo.ilike.%${search}%,fabricante.ilike.%${search}%`);
+        query = query.or(`identificador.ilike.%${search}%,modelo.ilike.%${search}%,fabricante.ilike.%${search}%`);
       }
 
       const { data, count, error } = await query
-        .order('numero', { ascending: true })
+        .order('identificador', { ascending: true })
         .range(offset, offset + limit - 1);
 
       return { data, count: count || 0, error };
@@ -273,8 +267,8 @@ export async function atualizarMaquina(id: string, maquina: MaquinaUpdate, clini
   return await maquinasServerService.atualizarMaquina(id, maquina, clinicaId);
 }
 
-export async function alterarStatusMaquina(id: string, status: 'ativa' | 'manutencao' | 'inativa', clinicaId: string) {
-  return await maquinasServerService.alterarStatusMaquina(id, status, clinicaId);
+export async function alterarStatusMaquina(id: string, ativa: boolean, clinicaId: string) {
+  return await maquinasServerService.alterarStatusMaquina(id, ativa, clinicaId);
 }
 
 export async function deletarMaquina(id: string, clinicaId: string) {

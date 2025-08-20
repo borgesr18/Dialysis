@@ -21,7 +21,7 @@ export interface Database {
         Row: {
           id: string;
           clinica_id: string;
-          nome: string;
+          nome_completo: string;
           cpf?: string;
           rg?: string;
           data_nascimento?: string;
@@ -45,13 +45,12 @@ export interface Database {
         Row: {
           id: string;
           clinica_id: string;
-          numero: string;
+          sala_id: string;
+          identificador: string;
+          marca?: string;
           modelo?: string;
-          fabricante?: string;
-          ano_fabricacao?: number;
-          numero_serie?: string;
-          status: 'ativa' | 'manutencao' | 'inativa';
-          observacoes?: string;
+          serie?: string;
+          ativa?: boolean;
           created_at: string;
           updated_at: string;
         };

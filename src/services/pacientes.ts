@@ -24,7 +24,7 @@ export class PacientesService {
         .select('*')
         .eq('clinica_id', clinicaId)
         .eq('ativo', true)
-        .order('nome', { ascending: true });
+        .order('nome_completo', { ascending: true });
 
       return { data, error };
     } catch (error) {
@@ -56,8 +56,8 @@ export class PacientesService {
         .select('*')
         .eq('clinica_id', clinicaId)
         .eq('ativo', true)
-        .ilike('nome', `%${nome}%`)
-        .order('nome', { ascending: true });
+        .ilike('nome_completo', `%${nome}%`)
+        .order('nome_completo', { ascending: true });
 
       return { data, error };
     } catch (error) {
@@ -201,11 +201,11 @@ export class PacientesService {
         .eq('ativo', true);
 
       if (search) {
-        query = query.or(`nome.ilike.%${search}%,cpf.ilike.%${search}%`);
+        query = query.or(`nome_completo.ilike.%${search}%,cpf.ilike.%${search}%`);
       }
 
       const { data, count, error } = await query
-        .order('nome', { ascending: true })
+        .order('nome_completo', { ascending: true })
         .range(offset, offset + limit - 1);
 
       return { data, count: count || 0, error };

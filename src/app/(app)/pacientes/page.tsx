@@ -97,11 +97,11 @@ export default async function PacientesPage({ searchParams }: { searchParams?: S
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gradient-medical rounded-full flex items-center justify-center text-white font-semibold">
-                    {paciente.nome.charAt(0).toUpperCase()}
+                    {paciente.nome_completo.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {paciente.nome}
+                      {paciente.nome_completo}
                     </h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                       {paciente.cpf && (
