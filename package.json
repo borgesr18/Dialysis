@@ -26,9 +26,13 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hook-form": "^7.53.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.3.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.0",
     "@types/node": "20.12.12",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
@@ -36,16 +40,14 @@
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.10",
     "husky": "^9.1.6",
+    "jsdom": "^24.1.0",
     "lint-staged": "^15.2.9",
     "postcss": "8.4.41",
     "prettier": "3.3.3",
     "prettier-plugin-tailwindcss": "0.6.10",
     "tailwindcss": "3.4.10",
     "typescript": "5.4.5",
-    "vitest": "1.6.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "jsdom": "^24.1.0"
+    "vitest": "1.6.0"
   },
   "engines": {
     "node": ">=18.18 <23"
@@ -56,7 +58,9 @@
     "*.{ts,tsx,js,jsx,css,md,json}": "prettier --write"
   },
   "prettier": {
-    "plugins": ["prettier-plugin-tailwindcss"],
+    "plugins": [
+      "prettier-plugin-tailwindcss"
+    ],
     "singleQuote": true,
     "trailingComma": "all",
     "printWidth": 100

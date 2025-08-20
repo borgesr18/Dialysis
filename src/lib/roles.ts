@@ -52,3 +52,31 @@ export async function can(permission: Permission) {
   if (!role) return false;
   return rolePermissions[role]?.includes(permission) ?? false;
 }
+
+export async function getUserClinicId(): Promise<string | null> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from('usuarios_clinicas')
+    .select('clinica_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data?.clinica_id ?? null;
+}
+
+export async function requireClinicAccess(clinicaId: string) {
+  const userClinicId = await getUserClinicId();
+  if (!userClinicId || userClinicId !== clinicaId) {
+    redirect('/forbidden');
+  }
+}
+
+export async function hasClinicAccess(clinicaId: string): Promise<boolean> {
+  const userClinicId = await getUserClinicId();
+  return userClinicId === clinicaId;
+}

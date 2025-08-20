@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import { Button } from '@/components/ui/Button';
 import { LinkButton } from '@/components/ui/LinkButton';
@@ -9,16 +8,18 @@ import { ToastContainer } from '@/components/ui/Toast';
 import { FormSubmit } from '@/components/ui/FormSubmit';
 import { Card } from '@/components/ui/Card';
 import { Clock, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
+import { turnosService, listarTurnos, deletarTurno } from '@/services/turnos';
+import { Turno } from '@/types/database';
 
-async function deleteTurno(id: string) {
+async function deleteTurnoAction(id: string) {
   'use server';
-  const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
-  const { error } = await supabase
-    .from('turnos')
-    .delete()
-    .eq('id', id)
-    .eq('clinica_id', clinica_id);
+  
+  if (!clinica_id) {
+    redirect('/login');
+  }
+  
+  const { error } = await deletarTurno(id, clinica_id);
   const ok = !error ? 'Turno excluído com sucesso' : '';
   const err = error ? encodeURIComponent(error.message) : '';
   const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
@@ -28,14 +29,13 @@ async function deleteTurno(id: string) {
 type SearchParams = { ok?: string; error?: string };
 
 export default async function TurnosPage({ searchParams }: { searchParams?: SearchParams }) {
-  const supabase = createClient();
   const clinicaId = await getCurrentClinicId();
+  
+  if (!clinicaId) {
+    redirect('/login');
+  }
 
-  const { data: turnos, error } = await supabase
-    .from('turnos')
-    .select('*')
-    .eq('clinica_id', clinicaId)
-    .order('nome');
+  const { data: turnos, error } = await listarTurnos(clinicaId);
 
   if (error) {
     throw new Error('Falha ao carregar turnos: ' + error.message);
@@ -148,7 +148,7 @@ export default async function TurnosPage({ searchParams }: { searchParams?: Sear
                           <Edit className="mr-1 h-4 w-4" />
                           Editar
                         </LinkButton>
-                        <form action={deleteTurno.bind(null, t.id)}>
+                        <form action={deleteTurnoAction.bind(null, t.id)}>
                           <FormSubmit
                             variant="ghost"
                             size="sm"

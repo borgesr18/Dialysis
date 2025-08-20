@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import { Button } from '@/components/ui/Button';
 import { LinkButton } from '@/components/ui/LinkButton';
@@ -9,16 +8,18 @@ import { ToastContainer } from '@/components/ui/Toast';
 import { FormSubmit } from '@/components/ui/FormSubmit';
 import { Card } from '@/components/ui/Card';
 import { Building, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
+import { salasService, deletarSala, listarSalas } from '@/services/salas';
+import { Sala } from '@/types/database';
 
-async function deleteSala(id: string) {
+async function deleteSalaAction(id: string) {
   'use server';
-  const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
-  const { error } = await supabase
-    .from('salas')
-    .delete()
-    .eq('id', id)
-    .eq('clinica_id', clinica_id);
+  
+  if (!clinica_id) {
+    redirect('/login');
+  }
+  
+  const { error } = await deletarSala(id, clinica_id);
   const ok = !error ? 'Sala excluída com sucesso' : '';
   const err = error ? encodeURIComponent(error.message) : '';
   const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
@@ -28,14 +29,17 @@ async function deleteSala(id: string) {
 type SearchParams = { ok?: string; error?: string };
 
 export default async function SalasPage({ searchParams }: { searchParams?: SearchParams }) {
-  const supabase = createClient();
   const clinicaId = await getCurrentClinicId();
+  
+  if (!clinicaId) {
+    redirect('/login');
+  }
 
-  const { data: salas } = await supabase
-    .from('salas')
-    .select('*')
-    .eq('clinica_id', clinicaId)
-    .order('nome');
+  const { data: salas, error } = await listarSalas(clinicaId);
+
+  if (error) {
+    throw new Error('Falha ao carregar salas: ' + error.message);
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -138,7 +142,7 @@ export default async function SalasPage({ searchParams }: { searchParams?: Searc
                           <Edit className="mr-1 h-4 w-4" />
                           Editar
                         </LinkButton>
-                        <form action={deleteSala.bind(null, s.id)}>
+                        <form action={deleteSalaAction.bind(null, s.id)}>
                           <FormSubmit
                             variant="ghost"
                             size="sm"

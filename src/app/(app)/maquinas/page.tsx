@@ -1,196 +1,299 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
-import { getCurrentClinicId } from '@/lib/get-clinic';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { LinkButton } from '@/components/ui/LinkButton';
-import { Badge } from '@/components/ui/Badge';
-import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { ToastContainer } from '@/components/ui/Toast';
-import { FormSubmit } from '@/components/ui/FormSubmit';
+import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
-import { Monitor, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { Search, Plus, Edit, Trash2, Settings, Wrench } from 'lucide-react';
+import Link from 'next/link';
+import { maquinasService } from '@/services/maquinas';
+import { salasService } from '@/services/salas';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import type { Maquina, Sala } from '@/types/database';
 
-async function deleteMaquina(id: string) {
-  'use server';
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
-  const { error } = await supabase
-    .from('maquinas')
-    .delete()
-    .eq('id', id)
-    .eq('clinica_id', clinica_id);
-  const ok = !error ? 'Máquina excluída com sucesso' : '';
-  const err = error ? encodeURIComponent(error.message) : '';
-  const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
-  redirect(`/maquinas${params}`);
-}
+export default function MaquinasPage() {
+  const { user, clinicId, loading: authLoading } = useAuth();
+  const [maquinas, setMaquinas] = useState<Maquina[]>([]);
+  const [salas, setSalas] = useState<Sala[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ativa' | 'inativa' | 'manutencao'>('todos');
+  const [error, setError] = useState<string | null>(null);
 
-type SearchParams = { ok?: string; error?: string };
+  useEffect(() => {
+    if (authLoading || !clinicId) return;
+    
+    const fetchData = async () => {
+      try {
+        const [maquinasResult, salasResult] = await Promise.all([
+          maquinasService.listarMaquinas(clinicId),
+          salasService.listarSalasAtivas(clinicId)
+        ]);
+        
+        if (maquinasResult.error) {
+          console.error('Erro ao carregar máquinas:', maquinasResult.error);
+          setError('Erro ao carregar máquinas');
+          toast.error('Erro ao carregar máquinas');
+          return;
+        }
+        
+        setMaquinas(maquinasResult.data || []);
+        setSalas(salasResult.data || []);
+      } catch (error) {
+        console.error('Erro inesperado:', error);
+        setError('Erro inesperado ao carregar dados');
+        toast.error('Erro inesperado ao carregar dados');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-export default async function MaquinasPage({ searchParams }: { searchParams?: SearchParams }) {
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
+    fetchData();
+  }, [authLoading, clinicId]);
 
-  const [{ data: maquinas }, { data: salas }] = await Promise.all([
-    supabase
-      .from('maquinas')
-      .select('id, sala_id, identificador, marca, modelo, serie, ativa')
-      .eq('clinica_id', clinica_id)
-      .order('identificador', { ascending: true }),
-    supabase
-      .from('salas')
-      .select('id, nome')
-      .eq('clinica_id', clinica_id)
-      .order('nome', { ascending: true }),
-  ]);
+  const handleDeleteMaquina = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta máquina?')) return;
+    if (!clinicId) return;
+    
+    try {
+      const { error } = await maquinasService.deletarMaquina(id, clinicId);
+      if (error) {
+        toast.error('Erro ao excluir máquina');
+        return;
+      }
+      
+      setMaquinas(prev => prev.filter(m => m.id !== id));
+      toast.success('Máquina excluída com sucesso');
+    } catch (error) {
+      toast.error('Erro inesperado ao excluir máquina');
+    }
+  };
+
+  // Filtrar máquinas
+  const maquinasFiltradas = maquinas.filter(maquina => {
+    const matchesSearch = 
+      maquina.numero.toString().includes(searchTerm) ||
+      maquina.numero_serie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      maquina.fabricante?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = 
+      filtroStatus === 'todos' ||
+      (filtroStatus === 'ativa' && maquina.status === 'ativa') ||
+      (filtroStatus === 'inativa' && maquina.status === 'inativa') ||
+      (filtroStatus === 'manutencao' && maquina.status === 'manutencao');
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-gray-500">Carregando máquinas...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-red-500">{error}</div>
+        </div>
+      </div>
+    );
+  }
 
   const salaNome = new Map((salas ?? []).map((s) => [s.id, s.nome as string]));
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <ToastContainer 
-        successMessage={searchParams?.ok ? decodeURIComponent(searchParams.ok) : undefined}
-        errorMessage={searchParams?.error ? decodeURIComponent(searchParams.error) : undefined}
-      />
-
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-            <Monitor className="w-8 h-8 mr-3 text-purple-500" />
-            Máquinas
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Gerenciamento de equipamentos de diálise
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <Settings className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Máquinas</h1>
+            <p className="text-gray-600">Gerencie as máquinas de hemodiálise</p>
+          </div>
         </div>
-        <div className="flex space-x-3">
-          <Button variant="outline" size="md" className="border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-            <Filter className="mr-2 h-4 w-4" />
-            Filtrar
-          </Button>
-          <LinkButton href="/maquinas/new" className="text-white bg-gradient-medical hover:shadow-glow transition-all duration-200">
-            <Plus className="mr-2 h-4 w-4" />
+        <Link href="/maquinas/nova">
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
             Nova Máquina
-          </LinkButton>
-        </div>
+          </Button>
+        </Link>
       </div>
 
-      {/* Lista */}
-      {(!maquinas || maquinas.length === 0) ? (
-        <Card variant="elevated" className="p-12">
-          <EmptyState
-            title="Nenhuma máquina encontrada"
-            description="Comece adicionando a primeira máquina ao sistema."
-            action={{
-              label: "Adicionar Máquina",
-              href: "/maquinas/new"
-            }}
-            icon={<Monitor className="h-12 w-12" />}
-          />
-        </Card>
-      ) : (
-        <Card variant="elevated" className="overflow-hidden">
-          <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                <Activity className="w-5 h-5 mr-2 text-purple-500" />
-                Lista de Máquinas
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {maquinas.length} máquina(s) encontrada(s)
-              </p>
+      {/* Filtros */}
+      <Card>
+        <div className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar por número, série ou fabricante..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={filtroStatus === 'todos' ? 'primary' : 'outline'}
+                onClick={() => setFiltroStatus('todos')}
+                size="sm"
+              >
+                Todas
+              </Button>
+              <Button
+                variant={filtroStatus === 'ativa' ? 'primary' : 'outline'}
+                onClick={() => setFiltroStatus('ativa')}
+                size="sm"
+              >
+                Ativas
+              </Button>
+              <Button
+                variant={filtroStatus === 'inativa' ? 'primary' : 'outline'}
+                onClick={() => setFiltroStatus('inativa')}
+                size="sm"
+              >
+                Inativas
+              </Button>
+              <Button
+                variant={filtroStatus === 'manutencao' ? 'primary' : 'outline'}
+                onClick={() => setFiltroStatus('manutencao')}
+                size="sm"
+              >
+                Manutenção
+              </Button>
             </div>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Equipamento
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Sala
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Especificações
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {maquinas.map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                          <Monitor className="w-5 h-5" />
-                        </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {m.identificador}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            Série: {m.serie ?? '—'}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200">
-                        {salaNome.get(m.sala_id) ?? '—'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">
-                        {m.marca ?? '—'} {m.modelo ?? ''}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={m.ativa ? 'success' : 'neutral'}>
-                        {m.ativa ? 'Ativa' : 'Inativa'}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <LinkButton
-                          href={`/maquinas/${m.id}/edit`}
-                          variant="ghost"
-                          size="sm"
-                          className="hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 dark:hover:text-purple-400"
-                        >
-                          <Edit className="mr-1 h-4 w-4" />
-                          Editar
-                        </LinkButton>
-                        <form action={deleteMaquina.bind(null, m.id)}>
-                          <FormSubmit
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-                            onClick={(e) => {
-                              if (!confirm('Tem certeza que deseja excluir esta máquina?')) {
-                                e.preventDefault();
-                              }
-                            }}
-                          >
-                            <Trash2 className="mr-1 h-4 w-4" />
-                            Excluir
-                          </FormSubmit>
-                        </form>
-                      </div>
-                    </td>
+        </div>
+      </Card>
+
+      {/* Lista */}
+      {(!maquinasFiltradas || maquinasFiltradas.length === 0) ? (
+        <Card>
+          <div className="p-8 text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="p-4 bg-gray-100 rounded-full">
+                <Settings className="w-8 h-8 text-gray-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  {searchTerm || filtroStatus !== 'todos' ? 'Nenhuma máquina encontrada' : 'Nenhuma máquina cadastrada'}
+                </h3>
+                <p className="text-gray-500 mt-1">
+                  {searchTerm || filtroStatus !== 'todos' ? 
+                    'Tente ajustar os filtros de busca.' : 
+                    'Comece adicionando a primeira máquina da clínica.'
+                  }
+                </p>
+              </div>
+              {!searchTerm && filtroStatus === 'todos' && (
+                <Link href="/maquinas/nova">
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Primeira Máquina
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <Card>
+          <div className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Máquina
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sala
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ações
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {maquinasFiltradas.map((maquina) => {
+                    return (
+                      <tr key={maquina.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-medium">
+                                {maquina.numero}
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                Máquina {maquina.numero}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {maquina.numero_serie ? `Série: ${maquina.numero_serie}` : 'Série não informada'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {maquina.fabricante ? `${maquina.fabricante}` : 'Fabricante não informado'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Sala não definida
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge 
+                            variant={maquina.status === 'ativa' ? 'success' : maquina.status === 'manutencao' ? 'warning' : 'neutral'}
+                          >
+                            <Wrench className="w-3 h-3 mr-1" />
+                            {maquina.status === 'ativa' ? 'Ativa' : maquina.status === 'manutencao' ? 'Manutenção' : 'Inativa'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <Link href={`/maquinas/${maquina.id}/edit`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteMaquina(maquina.id)}
+                              className="border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </Card>
       )}
