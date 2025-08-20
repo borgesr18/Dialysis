@@ -11,6 +11,8 @@ import { Card } from '@/components/ui/Card';
 import { Building, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
 import { Sala } from '@/types/database';
 
+export const dynamic = 'force-dynamic';
+
 
 async function deleteSalaAction(id: string) {
   'use server';

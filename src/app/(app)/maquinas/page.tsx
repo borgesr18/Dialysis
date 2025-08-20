@@ -9,6 +9,8 @@ import { Card } from '@/components/ui/Card';
 import { Settings, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
 import { Maquina } from '@/types/database';
 
+export const dynamic = 'force-dynamic';
+
 
 async function deleteMaquinaAction(id: string) {
   'use server';

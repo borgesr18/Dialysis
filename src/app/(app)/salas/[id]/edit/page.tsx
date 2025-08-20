@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 
+export const dynamic = 'force-dynamic';
+
 async function updateSala(id: string, fd: FormData) {
   'use server';
   const supabase = createClient();

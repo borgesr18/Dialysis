@@ -5,6 +5,8 @@ import { getCurrentClinicId } from '@/lib/get-clinic';
 import { Settings } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
+export const dynamic = 'force-dynamic';
+
 async function createMaquina(fd: FormData) {
   'use server';
   const supabase = createClient();

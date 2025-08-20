@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import { Clock } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
+export const dynamic = 'force-dynamic';
+
 async function createTurno(fd: FormData) {
   'use server';
   const supabase = createClient();

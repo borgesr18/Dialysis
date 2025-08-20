@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import { Building } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
+export const dynamic = 'force-dynamic';
+
 async function createSala(fd: FormData) {
   'use server';
   const supabase = createClient();

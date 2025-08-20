@@ -11,6 +11,8 @@ import { Card } from '@/components/ui/Card';
 import { Clock, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
 import { Turno } from '@/types/database';
 
+export const dynamic = 'force-dynamic';
+
 async function deleteTurnoAction(id: string) {
   'use server';
   try {

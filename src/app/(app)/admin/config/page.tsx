@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 // import { requireAdmin } from '@/lib/roles'; // Temporariamente removido
 import { createClient } from '@/lib/supabase-server';
