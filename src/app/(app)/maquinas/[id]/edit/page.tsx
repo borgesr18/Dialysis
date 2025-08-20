@@ -9,11 +9,15 @@ async function updateMaquina(id: string, fd: FormData) {
   const clinica_id = await getCurrentClinicId();
 
   const sala_id = String(fd.get('sala_id') || '');
-  const identificador = String(fd.get('identificador') || '');
-  const marca = String(fd.get('marca') || '');
-  const modelo = String(fd.get('modelo') || '');
-  const serie = String(fd.get('serie') || '');
+  const identificador = String(fd.get('identificador') || '').trim();
+  const marca = String(fd.get('marca') || '').trim();
+  const modelo = String(fd.get('modelo') || '').trim();
+  const serie = String(fd.get('serie') || '').trim();
   const ativa = String(fd.get('ativa') || 'true') === 'true';
+
+  if (!identificador) {
+    redirect('/maquinas?error=' + encodeURIComponent('Identificador é obrigatório.'));
+  }
 
   const payload: any = {
     sala_id,
@@ -40,6 +44,12 @@ async function updateMaquina(id: string, fd: FormData) {
 export default async function EditarMaquinaPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
+
+  // Validar formato UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(params.id)) {
+    redirect('/maquinas?error=' + encodeURIComponent('ID inválido'));
+  }
 
   const [{ data: maquina }, { data: salas }] = await Promise.all([
     supabase

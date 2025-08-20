@@ -1,299 +1,164 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { redirect } from 'next/navigation';
+import { getCurrentClinicId } from '@/lib/get-clinic';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { LinkButton } from '@/components/ui/LinkButton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ToastContainer } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Search, Plus, Edit, Trash2, Settings, Wrench } from 'lucide-react';
-import Link from 'next/link';
-import { maquinasService } from '@/services/maquinas';
-import { salasService } from '@/services/salas';
-import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
-import type { Maquina, Sala } from '@/types/database';
+import { Settings, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
+import { maquinasService, listarMaquinas } from '@/services/maquinas';
+import { Maquina } from '@/types/database';
+import { deletarMaquina } from '@/services/maquinas';
 
-export default function MaquinasPage() {
-  const { user, clinicId, loading: authLoading } = useAuth();
-  const [maquinas, setMaquinas] = useState<Maquina[]>([]);
-  const [salas, setSalas] = useState<Sala[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'ativa' | 'inativa' | 'manutencao'>('todos');
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (authLoading || !clinicId) return;
-    
-    const fetchData = async () => {
-      try {
-        const [maquinasResult, salasResult] = await Promise.all([
-          maquinasService.listarMaquinas(clinicId),
-          salasService.listarSalasAtivas(clinicId)
-        ]);
-        
-        if (maquinasResult.error) {
-          console.error('Erro ao carregar máquinas:', maquinasResult.error);
-          setError('Erro ao carregar máquinas');
-          toast.error('Erro ao carregar máquinas');
-          return;
-        }
-        
-        setMaquinas(maquinasResult.data || []);
-        setSalas(salasResult.data || []);
-      } catch (error) {
-        console.error('Erro inesperado:', error);
-        setError('Erro inesperado ao carregar dados');
-        toast.error('Erro inesperado ao carregar dados');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [authLoading, clinicId]);
-
-  const handleDeleteMaquina = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta máquina?')) return;
-    if (!clinicId) return;
-    
-    try {
-      const { error } = await maquinasService.deletarMaquina(id, clinicId);
-      if (error) {
-        toast.error('Erro ao excluir máquina');
-        return;
-      }
-      
-      setMaquinas(prev => prev.filter(m => m.id !== id));
-      toast.success('Máquina excluída com sucesso');
-    } catch (error) {
-      toast.error('Erro inesperado ao excluir máquina');
-    }
-  };
-
-  // Filtrar máquinas
-  const maquinasFiltradas = maquinas.filter(maquina => {
-    const matchesSearch = 
-      maquina.numero.toString().includes(searchTerm) ||
-      maquina.numero_serie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      maquina.fabricante?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = 
-      filtroStatus === 'todos' ||
-      (filtroStatus === 'ativa' && maquina.status === 'ativa') ||
-      (filtroStatus === 'inativa' && maquina.status === 'inativa') ||
-      (filtroStatus === 'manutencao' && maquina.status === 'manutencao');
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">Carregando máquinas...</div>
-        </div>
-      </div>
-    );
+async function deleteMaquinaAction(id: string) {
+  'use server';
+  const clinica_id = await getCurrentClinicId();
+  
+  if (!clinica_id) {
+    redirect('/login');
   }
+  
+  const { error } = await deletarMaquina(id, clinica_id);
+  const ok = !error ? 'Máquina excluída com sucesso' : '';
+  const err = error ? encodeURIComponent(error.message) : '';
+  const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
+  redirect(`/maquinas${params}`);
+}
+
+type SearchParams = { ok?: string; error?: string };
+
+export default async function MaquinasPage({ searchParams }: { searchParams?: SearchParams }) {
+  const clinicaId = await getCurrentClinicId();
+  
+  if (!clinicaId) {
+    redirect('/login');
+  }
+
+  const { data: maquinas, error } = await listarMaquinas(clinicaId);
 
   if (error) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-red-500">{error}</div>
-        </div>
-      </div>
-    );
+    throw new Error('Falha ao carregar máquinas: ' + error.message);
   }
-
-  const salaNome = new Map((salas ?? []).map((s) => [s.id, s.nome as string]));
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <ToastContainer 
+        successMessage={searchParams?.ok ? decodeURIComponent(searchParams.ok) : undefined}
+        errorMessage={searchParams?.error ? decodeURIComponent(searchParams.error) : undefined}
+      />
+
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Settings className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Máquinas</h1>
-            <p className="text-gray-600">Gerencie as máquinas de hemodiálise</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+            <Settings className="w-8 h-8 mr-3 text-blue-500" />
+            Máquinas
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Gerenciamento de máquinas de hemodiálise
+          </p>
         </div>
-        <Link href="/maquinas/nova">
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Máquina
+        <div className="flex space-x-3">
+          <Button variant="outline" size="md" className="border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <Filter className="mr-2 h-4 w-4" />
+            Filtrar
           </Button>
-        </Link>
+          <LinkButton href="/maquinas/new" className="text-white bg-gradient-medical hover:shadow-glow transition-all duration-200">
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Máquina
+          </LinkButton>
+        </div>
       </div>
 
-      {/* Filtros */}
-      <Card>
-        <div className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Buscar por número, série ou fabricante..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={filtroStatus === 'todos' ? 'primary' : 'outline'}
-                onClick={() => setFiltroStatus('todos')}
-                size="sm"
-              >
-                Todas
-              </Button>
-              <Button
-                variant={filtroStatus === 'ativa' ? 'primary' : 'outline'}
-                onClick={() => setFiltroStatus('ativa')}
-                size="sm"
-              >
-                Ativas
-              </Button>
-              <Button
-                variant={filtroStatus === 'inativa' ? 'primary' : 'outline'}
-                onClick={() => setFiltroStatus('inativa')}
-                size="sm"
-              >
-                Inativas
-              </Button>
-              <Button
-                variant={filtroStatus === 'manutencao' ? 'primary' : 'outline'}
-                onClick={() => setFiltroStatus('manutencao')}
-                size="sm"
-              >
-                Manutenção
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Lista */}
-      {(!maquinasFiltradas || maquinasFiltradas.length === 0) ? (
-        <Card>
-          <div className="p-8 text-center">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="p-4 bg-gray-100 rounded-full">
-                <Settings className="w-8 h-8 text-gray-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">
-                  {searchTerm || filtroStatus !== 'todos' ? 'Nenhuma máquina encontrada' : 'Nenhuma máquina cadastrada'}
-                </h3>
-                <p className="text-gray-500 mt-1">
-                  {searchTerm || filtroStatus !== 'todos' ? 
-                    'Tente ajustar os filtros de busca.' : 
-                    'Comece adicionando a primeira máquina da clínica.'
-                  }
-                </p>
-              </div>
-              {!searchTerm && filtroStatus === 'todos' && (
-                <Link href="/maquinas/nova">
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Primeira Máquina
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-        </Card>
+      {/* Lista de Máquinas */}
+      {!maquinas || maquinas.length === 0 ? (
+        <EmptyState
+          title="Nenhuma máquina cadastrada"
+          description="Comece adicionando a primeira máquina de hemodiálise da clínica."
+          action={{
+            label: "Nova Máquina",
+            href: "/maquinas/new"
+          }}
+        />
       ) : (
-        <Card>
-          <div className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Máquina
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sala
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ações
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {maquinasFiltradas.map((maquina) => {
-                    return (
-                      <tr key={maquina.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-medium">
-                                {maquina.numero}
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                Máquina {maquina.numero}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {maquina.numero_serie ? `Série: ${maquina.numero_serie}` : 'Série não informada'}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {maquina.fabricante ? `${maquina.fabricante}` : 'Fabricante não informado'}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Sala não definida
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge 
-                            variant={maquina.status === 'ativa' ? 'success' : maquina.status === 'manutencao' ? 'warning' : 'neutral'}
+        <Card className="overflow-hidden border-0 shadow-lg bg-white dark:bg-gray-800">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Número
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Modelo
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                     Observações
+                   </th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {maquinas.map((maquina: Maquina) => (
+                  <tr key={maquina.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <Activity className="h-5 w-5 text-blue-500 mr-3" />
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {maquina.numero}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{maquina.modelo}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{maquina.fabricante}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                         maquina.status === 'ativa' 
+                           ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                           : maquina.status === 'manutencao'
+                           ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
+                           : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                       }`}>
+                         {maquina.status === 'ativa' ? 'Ativa' : maquina.status === 'manutencao' ? 'Manutenção' : 'Inativa'}
+                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                       {maquina.observacoes || 'N/A'}
+                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-2">
+                        <LinkButton
+                          href={`/maquinas/${maquina.id}/edit`}
+                          variant="outline"
+                          size="sm"
+                          className="border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </LinkButton>
+                        <form action={deleteMaquinaAction.bind(null, maquina.id)} className="inline">
+                          <Button 
+                            type="submit"
+                            variant="outline" 
+                            size="sm"
+                            className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900"
                           >
-                            <Wrench className="w-3 h-3 mr-1" />
-                            {maquina.status === 'ativa' ? 'Ativa' : maquina.status === 'manutencao' ? 'Manutenção' : 'Inativa'}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            <Link href={`/maquinas/${maquina.id}/edit`}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteMaquina(maquina.id)}
-                              className="border-red-300 text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </Card>
       )}

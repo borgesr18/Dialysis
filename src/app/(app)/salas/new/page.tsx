@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Building } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
 
 async function createSala(fd: FormData) {
   'use server';
@@ -20,29 +22,40 @@ async function createSala(fd: FormData) {
 
 export default function NovaSalaPage() {
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Nova Sala</h1>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+            <Building className="w-8 h-8 mr-3 text-green-500" />
+            Nova Sala
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Adicione uma nova sala de diálise ao sistema
+          </p>
+        </div>
         <Link href="/salas" className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-neutral-700 hover:bg-neutral-50">
           Voltar
         </Link>
       </div>
 
-      <form action={createSala} className="rounded-xl border border-neutral-200 bg-white p-4 grid gap-3 max-w-xl">
-        <div className="grid gap-1.5">
-          <label className="text-sm text-neutral-700">Nome</label>
-          <input className="input border rounded-md px-3 py-2" name="nome" placeholder="Nome da sala" required />
-        </div>
-        <div className="grid gap-1.5">
-          <label className="text-sm text-neutral-700">Descrição</label>
-          <input className="input border rounded-md px-3 py-2" name="descricao" placeholder="Descrição" />
-        </div>
-        <div className="pt-2">
-          <button className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700" type="submit">
-            Salvar
-          </button>
-        </div>
-      </form>
+      <Card variant="elevated" className="max-w-2xl">
+        <form action={createSala} className="p-6 grid gap-6">
+          <div className="grid gap-1.5">
+            <label className="text-sm text-neutral-700">Nome</label>
+            <input className="input border rounded-md px-3 py-2" name="nome" placeholder="Nome da sala" required />
+          </div>
+          <div className="grid gap-1.5">
+            <label className="text-sm text-neutral-700">Descrição</label>
+            <input className="input border rounded-md px-3 py-2" name="descricao" placeholder="Descrição" />
+          </div>
+          <div className="pt-2">
+            <button className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700" type="submit">
+              Salvar
+            </button>
+          </div>
+        </form>
+      </Card>
     </div>
   );
 }

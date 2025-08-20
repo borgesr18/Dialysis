@@ -11,6 +11,7 @@ import { Building, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
 import { salasService, deletarSala, listarSalas } from '@/services/salas';
 import { Sala } from '@/types/database';
 
+
 async function deleteSalaAction(id: string) {
   'use server';
   const clinica_id = await getCurrentClinicId();

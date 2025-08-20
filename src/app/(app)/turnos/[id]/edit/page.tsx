@@ -49,6 +49,12 @@ export default async function EditarTurnoPage({ params }: { params: { id: string
   const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
 
+  // Validar formato UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(params.id)) {
+    redirect('/turnos?error=' + encodeURIComponent('ID inválido'));
+  }
+
   const { data: turno } = await supabase
     .from('turnos')
     .select('id, nome, hora_inicio, hora_fim, dias_semana')
