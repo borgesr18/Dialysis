@@ -1,74 +1,61 @@
-'use client';
-
 import { Button } from '@/components/ui/Button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase-server';
+import { getCurrentClinicId } from '@/lib/get-clinic';
+
+export const dynamic = 'force-dynamic';
 
 interface Paciente {
   id: string;
-  nome: string;
-  cpf: string;
+  registro: string;
+  nome_completo: string;
+  data_nascimento: string | null;
+  sexo: string | null;
   telefone: string | null;
-  email: string | null;
-  data_nascimento: string;
-  endereco: string | null;
+  cidade_nome: string | null;
+  codigo_ibge: number | null;
   ativo: boolean;
+  alerta_texto: string | null;
   created_at: string;
   updated_at: string;
   clinica_id: string;
 }
 
-export default function PacientesPage() {
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Mock data para evitar erros de permissão
-    const mockPacientes: Paciente[] = [
-      {
-        id: '1',
-        nome: 'João Silva',
-        cpf: '123.456.789-00',
-        telefone: '(11) 99999-9999',
-        email: 'joao@email.com',
-        data_nascimento: '1980-01-01',
-        endereco: 'Rua A, 123',
-        ativo: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        clinica_id: 'clinic-1'
-      },
-      {
-        id: '2',
-        nome: 'Maria Santos',
-        cpf: '987.654.321-00',
-        telefone: '(11) 88888-8888',
-        email: 'maria@email.com',
-        data_nascimento: '1975-05-15',
-        endereco: 'Rua B, 456',
-        ativo: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        clinica_id: 'clinic-1'
-      }
-    ];
-    
-    setTimeout(() => {
-      setPacientes(mockPacientes);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  if (loading) {
+export default async function PacientesPage() {
+  const supabase = createClient();
+  const clinicId = await getCurrentClinicId();
+  
+  if (!clinicId) {
     return (
       <div className="p-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-gray-500">Carregando pacientes...</div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">Clínica não encontrada. Faça login novamente.</p>
         </div>
       </div>
     );
+  }
+  
+  let pacientes: Paciente[] = [];
+  let error: string | null = null;
+
+  try {
+    const { data, error: fetchError } = await supabase
+      .from('pacientes')
+      .select('*')
+      .eq('clinica_id', clinicId)
+      .eq('ativo', true)
+      .order('nome_completo', { ascending: true });
+
+    if (fetchError) {
+      console.error('Erro ao buscar pacientes:', fetchError);
+      error = 'Erro ao carregar pacientes. Tente novamente.';
+    } else {
+      pacientes = data || [];
+    }
+  } catch (err) {
+    console.error('Erro inesperado:', err);
+    error = 'Erro inesperado ao carregar pacientes.';
   }
 
   if (error) {
@@ -110,19 +97,25 @@ export default function PacientesPage() {
                <div className="flex items-center justify-between">
                  <div className="flex items-center space-x-4">
                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                     {paciente.nome.charAt(0).toUpperCase()}
+                     {paciente.nome_completo.charAt(0).toUpperCase()}
                    </div>
                    <div>
                      <h3 className="text-lg font-semibold text-gray-900">
-                       {paciente.nome}
+                       {paciente.nome_completo}
                      </h3>
                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                       <span>CPF: {paciente.cpf}</span>
+                       <span>Registro: {paciente.registro}</span>
                        {paciente.telefone && <span>Tel: {paciente.telefone}</span>}
+                       {paciente.cidade_nome && <span>Cidade: {paciente.cidade_nome}</span>}
                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                          Ativo
                        </span>
                      </div>
+                     {paciente.alerta_texto && (
+                       <div className="mt-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                         Alerta: {paciente.alerta_texto}
+                       </div>
+                     )}
                    </div>
                  </div>
                  <div className="flex items-center space-x-2">
