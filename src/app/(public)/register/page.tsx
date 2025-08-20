@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { signUpWithPasswordAction } from '../login/actions';
+import { signup } from '@/app/_actions/auth';
 import { UserPlus, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -46,10 +46,10 @@ export default function RegisterPage({ searchParams }: RegisterPageProps) {
           </div>
         )}
 
-        <form action={signUpWithPasswordAction} className="space-y-6">
+        <form action={signup} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <label htmlFor="nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="nome_completo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Nome Completo
               </label>
               <div className="relative">
@@ -57,13 +57,32 @@ export default function RegisterPage({ searchParams }: RegisterPageProps) {
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="nome"
-                  name="nome"
+                  id="nome_completo"
+                  name="nome_completo"
                   type="text"
                   autoComplete="name"
                   required
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   placeholder="Seu nome completo"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="nome_clinica" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nome da Clínica
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="nome_clinica"
+                  name="nome_clinica"
+                  type="text"
+                  required
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Nome da sua clínica"
                 />
               </div>
             </div>
