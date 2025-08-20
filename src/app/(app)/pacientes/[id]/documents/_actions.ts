@@ -102,7 +102,7 @@ export async function listDocumentos(pacienteId: string, expiresIn = 600) {
 
   const docs = data ?? [];
   const withUrls = await Promise.all(
-    docs.map(async (d) => {
+    docs.map(async (d: any) => {
       const url = await getSignedUrl(d.storage_path, expiresIn);
       return { ...d, url };
     })

@@ -198,7 +198,7 @@ export class MaquinasService {
         total: data?.length || 0
       };
 
-      data?.forEach(maquina => {
+      data?.forEach((maquina: any) => {
         if (maquina.status === 'ativa') counts.ativas++;
         else if (maquina.status === 'manutencao') counts.manutencao++;
         else if (maquina.status === 'inativa') counts.inativas++;

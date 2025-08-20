@@ -101,7 +101,7 @@ export default async function NovaMaquinaPage() {
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
             >
               <option value="">Selecione uma sala</option>
-              {salas?.map((sala) => (
+              {salas?.map((sala: any) => (
                 <option key={sala.id} value={sala.id}>
                   {sala.nome}
                 </option>

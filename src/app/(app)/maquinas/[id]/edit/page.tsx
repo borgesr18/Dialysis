@@ -84,7 +84,7 @@ export default async function EditarMaquinaPage({ params }: { params: { id: stri
           <label className="text-sm text-neutral-700">Sala</label>
           <select name="sala_id" className="border rounded-md px-3 py-2" defaultValue={maquina.sala_id} required>
             <option value="">Selecione a sala</option>
-            {(salas ?? []).map((s) => (
+            {(salas ?? []).map((s: any) => (
               <option key={s.id} value={s.id}>
                 {s.nome}
               </option>

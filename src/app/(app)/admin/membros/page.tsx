@@ -24,7 +24,7 @@ async function fetchMembers(hasAdminKey: boolean): Promise<Member[]> {
     .eq('clinica_id', clinica_id)
     .order('created_at', { ascending: true });
 
-  const ids = (vincs ?? []).map((v) => v.user_id as string);
+  const ids = (vincs ?? []).map((v: any) => v.user_id as string);
   if (ids.length === 0) return [];
 
   const { data: perfis } = await supabase
@@ -32,7 +32,7 @@ async function fetchMembers(hasAdminKey: boolean): Promise<Member[]> {
     .select('id, papel')
     .in('id', ids);
 
-  const papelMap = new Map((perfis ?? []).map((p) => [p.id as string, p.papel as string]));
+  const papelMap = new Map((perfis ?? []).map((p: any) => [p.id as string, p.papel as string]));
   const users: Member[] = [];
 
   if (!hasAdminKey) {
@@ -40,7 +40,7 @@ async function fetchMembers(hasAdminKey: boolean): Promise<Member[]> {
       users.push({
         id,
         email: '(configure SUPABASE_SERVICE_ROLE_KEY para exibir e-mails)',
-        papel: papelMap.get(id) ?? 'VISUALIZADOR',
+        papel: (papelMap.get(id) as string) ?? 'VISUALIZADOR',
       });
     }
     return users;
@@ -54,13 +54,13 @@ async function fetchMembers(hasAdminKey: boolean): Promise<Member[]> {
         users.push({
           id,
           email: data.user?.email ?? '(sem e-mail)',
-          papel: papelMap.get(id) ?? 'VISUALIZADOR',
+          papel: (papelMap.get(id) as string) ?? 'VISUALIZADOR',
         });
       } catch {
         users.push({
           id,
           email: '(erro ao carregar e-mail)',
-          papel: papelMap.get(id) ?? 'VISUALIZADOR',
+          papel: (papelMap.get(id) as string) ?? 'VISUALIZADOR',
         });
       }
     }
@@ -70,7 +70,7 @@ async function fetchMembers(hasAdminKey: boolean): Promise<Member[]> {
       users.push({
         id,
         email: '(erro no Admin API)',
-        papel: papelMap.get(id) ?? 'VISUALIZADOR',
+        papel: (papelMap.get(id) as string) ?? 'VISUALIZADOR',
       });
     }
     return users;

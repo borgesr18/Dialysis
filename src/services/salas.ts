@@ -195,7 +195,7 @@ export class SalasService {
         total: data?.length || 0
       };
 
-      data?.forEach(sala => {
+      data?.forEach((sala: any) => {
         if (sala.ativa) counts.ativas++;
         else counts.inativas++;
       });
@@ -219,7 +219,7 @@ export class SalasService {
         return { capacidade: 0, error };
       }
 
-      const capacidadeTotal = data?.reduce((total, sala) => {
+      const capacidadeTotal = data?.reduce((total: any, sala: any) => {
         return total + (sala.capacidade || 0);
       }, 0) || 0;
 

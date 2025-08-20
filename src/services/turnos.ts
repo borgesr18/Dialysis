@@ -217,7 +217,7 @@ export class TurnosService {
 
       const turnosConflitantes: Turno[] = [];
 
-      data?.forEach(turno => {
+      data?.forEach((turno: any) => {
         // Verificar se há dias em comum
         const diasComuns = turno.dias_semana.some((dia: string) => diasSemana.includes(Number(dia)));
         
@@ -271,7 +271,7 @@ export class TurnosService {
         total: data?.length || 0
       };
 
-      data?.forEach(turno => {
+      data?.forEach((turno: any) => {
         if (turno.ativo) counts.ativos++;
         else counts.inativos++;
       });
