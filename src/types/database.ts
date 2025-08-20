@@ -206,6 +206,74 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['audit_log']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['audit_log']['Insert']>;
       };
+      sessoes_hemodialise: {
+        Row: {
+          id: string;
+          paciente_id: string;
+          maquina_id: string;
+          data_sessao: string;
+          hora_inicio: string;
+          hora_fim?: string;
+          peso_pre?: number;
+          peso_pos?: number;
+          ultrafiltração_prescrita?: number;
+          ultrafiltração_realizada?: number;
+          pressao_arterial_pre?: string;
+          pressao_arterial_pos?: string;
+          observacoes?: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['sessoes_hemodialise']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['sessoes_hemodialise']['Insert']>;
+      };
+      historico_acessos: {
+        Row: {
+          id: string;
+          sessao_id: string;
+          paciente_id: string;
+          tipo_acesso: string;
+          local_acesso?: string;
+          observacoes?: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['historico_acessos']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['historico_acessos']['Insert']>;
+      };
+      prescricoes: {
+        Row: {
+          id: string;
+          paciente_id: string;
+          medico_responsavel?: string;
+          tempo_dialise: number;
+          fluxo_sangue?: number;
+          fluxo_dialisato?: number;
+          ultrafiltração?: number;
+          anticoagulante?: string;
+          dose_anticoagulante?: string;
+          observacoes?: string;
+          ativa: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['prescricoes']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['prescricoes']['Insert']>;
+      };
+      exames_laboratoriais: {
+        Row: {
+          id: string;
+          paciente_id: string;
+          data_coleta: string;
+          tipo_exame: string;
+          resultado?: any;
+          valores_referencia?: any;
+          observacoes?: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['exames_laboratoriais']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['exames_laboratoriais']['Insert']>;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -233,6 +301,10 @@ export type PrescricaoDialitica = Database['public']['Tables']['prescricoes_dial
 export type Serologia = Database['public']['Tables']['serologias']['Row'];
 export type DocPaciente = Database['public']['Tables']['docs_paciente']['Row'];
 export type AuditLog = Database['public']['Tables']['audit_log']['Row'];
+export type SessaoHemodialise = Database['public']['Tables']['sessoes_hemodialise']['Row'];
+export type HistoricoAcesso = Database['public']['Tables']['historico_acessos']['Row'];
+export type Prescricao = Database['public']['Tables']['prescricoes']['Row'];
+export type ExameLaboratorial = Database['public']['Tables']['exames_laboratoriais']['Row'];
 
 // Tipos para inserção
 export type PacienteInsert = Database['public']['Tables']['pacientes']['Insert'];
@@ -240,6 +312,10 @@ export type MaquinaInsert = Database['public']['Tables']['maquinas']['Insert'];
 export type SalaInsert = Database['public']['Tables']['salas']['Insert'];
 export type TurnoInsert = Database['public']['Tables']['turnos']['Insert'];
 export type EscalaPacienteInsert = Database['public']['Tables']['escala_pacientes']['Insert'];
+export type SessaoHemodialiseInsert = Database['public']['Tables']['sessoes_hemodialise']['Insert'];
+export type HistoricoAcessoInsert = Database['public']['Tables']['historico_acessos']['Insert'];
+export type PrescricaoInsert = Database['public']['Tables']['prescricoes']['Insert'];
+export type ExameLaboratorialInsert = Database['public']['Tables']['exames_laboratoriais']['Insert'];
 
 // Tipos para atualização
 export type PacienteUpdate = Database['public']['Tables']['pacientes']['Update'];
@@ -247,3 +323,7 @@ export type MaquinaUpdate = Database['public']['Tables']['maquinas']['Update'];
 export type SalaUpdate = Database['public']['Tables']['salas']['Update'];
 export type TurnoUpdate = Database['public']['Tables']['turnos']['Update'];
 export type EscalaPacienteUpdate = Database['public']['Tables']['escala_pacientes']['Update'];
+export type SessaoHemodialiseUpdate = Database['public']['Tables']['sessoes_hemodialise']['Update'];
+export type HistoricoAcessoUpdate = Database['public']['Tables']['historico_acessos']['Update'];
+export type PrescricaoUpdate = Database['public']['Tables']['prescricoes']['Update'];
+export type ExameLaboratorialUpdate = Database['public']['Tables']['exames_laboratoriais']['Update'];
