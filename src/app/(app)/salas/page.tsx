@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentClinicId } from '@/lib/get-clinic';
+import { createClient } from '@/lib/supabase-server';
 import { Button } from '@/components/ui/Button';
 import { LinkButton } from '@/components/ui/LinkButton';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
@@ -8,7 +9,6 @@ import { ToastContainer } from '@/components/ui/Toast';
 import { DeleteButton } from '@/components/ui/DeleteButton';
 import { Card } from '@/components/ui/Card';
 import { Building, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
-import { salasService, deletarSala, listarSalas } from '@/services/salas';
 import { Sala } from '@/types/database';
 
 
@@ -20,8 +20,14 @@ async function deleteSalaAction(id: string) {
     redirect('/login');
   }
   
-  const { error } = await deletarSala(id, clinica_id);
-  const ok = !error ? 'Sala excluída com sucesso' : '';
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('salas')
+    .delete()
+    .eq('id', id)
+    .eq('clinica_id', clinica_id);
+    
+  const ok = !error ? 'Sala desativada com sucesso' : '';
   const err = error ? encodeURIComponent(error.message) : '';
   const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
   redirect(`/salas${params}`);
@@ -30,16 +36,37 @@ async function deleteSalaAction(id: string) {
 type SearchParams = { ok?: string; error?: string };
 
 export default async function SalasPage({ searchParams }: { searchParams?: SearchParams }) {
-  const clinicaId = await getCurrentClinicId();
-  
-  if (!clinicaId) {
-    redirect('/login');
-  }
+  let clinicaId: string | null = null;
+  let salas: Sala[] = [];
+  let error: any = null;
 
-  const { data: salas, error } = await listarSalas(clinicaId);
+  try {
+    clinicaId = await getCurrentClinicId();
+    
+    if (!clinicaId) {
+      redirect('/login');
+    }
 
-  if (error) {
-    throw new Error('Falha ao carregar salas: ' + error.message);
+    const supabase = createClient();
+    const result = await supabase
+      .from('salas')
+      .select('*')
+      .eq('clinica_id', clinicaId)
+      .order('nome', { ascending: true });
+
+    if (result.error) {
+      console.error('Erro ao carregar salas:', result.error.message);
+      error = result.error;
+    } else {
+      salas = result.data || [];
+    }
+  } catch (err) {
+    console.error('Erro na página de salas:', err);
+    error = err;
+    // Se houver erro de autenticação, redirecionar para login
+    if (err instanceof Error && err.message.includes('permission denied')) {
+      redirect('/login');
+    }
   }
 
   return (
@@ -72,8 +99,28 @@ export default async function SalasPage({ searchParams }: { searchParams?: Searc
         </div>
       </div>
 
+      {/* Mensagem de erro */}
+      {error && (
+        <Card className="p-12 text-center border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center">
+              <Activity className="w-8 h-8 text-red-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-red-900 dark:text-red-100">Erro ao carregar salas</h3>
+              <p className="text-red-600 dark:text-red-400 mt-1">
+                {error.message || 'Ocorreu um erro inesperado. Tente fazer login novamente.'}
+              </p>
+            </div>
+            <LinkButton href="/login" className="text-white bg-red-600 hover:bg-red-700">
+              Fazer Login
+            </LinkButton>
+          </div>
+        </Card>
+      )}
+
       {/* Lista */}
-      {(!salas || salas.length === 0) ? (
+      {!error && (!salas || salas.length === 0) ? (
         <Card variant="elevated" className="p-12">
           <EmptyState
             title="Nenhuma sala encontrada"
@@ -85,7 +132,7 @@ export default async function SalasPage({ searchParams }: { searchParams?: Searc
             icon={<Building className="h-12 w-12" />}
           />
         </Card>
-      ) : (
+      ) : !error ? (
         <Card variant="elevated" className="overflow-hidden">
           <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700">
             <div>
@@ -162,7 +209,7 @@ export default async function SalasPage({ searchParams }: { searchParams?: Searc
             </table>
           </div>
         </Card>
-      )}
+      ) : null}
     </div>
   );
 }

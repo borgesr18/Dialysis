@@ -8,10 +8,19 @@ export async function getMyRole(): Promise<PapelUsuario | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
+  // Buscar o perfil através da tabela usuarios_clinicas
+  const { data: userClinic } = await supabase
+    .from('usuarios_clinicas')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!userClinic) return null;
+
   const { data } = await supabase
     .from('perfis_usuarios')
     .select('papel')
-    .eq('id', user.id)
+    .eq('user_id', userClinic.user_id)
     .maybeSingle();
 
   return (data?.papel as PapelUsuario) ?? null;

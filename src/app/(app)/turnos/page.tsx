@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentClinicId } from '@/lib/get-clinic';
+import { createClient } from '@/lib/supabase-server';
 import { Button } from '@/components/ui/Button';
 import { LinkButton } from '@/components/ui/LinkButton';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
@@ -8,37 +9,62 @@ import { ToastContainer } from '@/components/ui/Toast';
 import { DeleteButton } from '@/components/ui/DeleteButton';
 import { Card } from '@/components/ui/Card';
 import { Clock, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
-import { turnosService, listarTurnos, deletarTurno } from '@/services/turnos';
 import { Turno } from '@/types/database';
 
 async function deleteTurnoAction(id: string) {
   'use server';
-  const clinica_id = await getCurrentClinicId();
-  
-  if (!clinica_id) {
+  try {
+    const clinica_id = await getCurrentClinicId();
+    
+    if (!clinica_id) {
+      redirect('/login');
+    }
+    
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('turnos')
+      .delete()
+      .eq('id', id)
+      .eq('clinica_id', clinica_id);
+    
+    const ok = !error ? 'Turno excluído com sucesso' : '';
+    const err = error ? encodeURIComponent(error.message) : '';
+    const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
+    redirect(`/turnos${params}`);
+  } catch (error) {
+    console.error('Erro ao deletar turno:', error);
     redirect('/login');
   }
-  
-  const { error } = await deletarTurno(id, clinica_id);
-  const ok = !error ? 'Turno excluído com sucesso' : '';
-  const err = error ? encodeURIComponent(error.message) : '';
-  const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
-  redirect(`/turnos${params}`);
 }
 
 type SearchParams = { ok?: string; error?: string };
 
 export default async function TurnosPage({ searchParams }: { searchParams?: SearchParams }) {
-  const clinicaId = await getCurrentClinicId();
+  let turnos: Turno[] = [];
+  let error: Error | null = null;
   
-  if (!clinicaId) {
-    redirect('/login');
-  }
+  try {
+    const clinicaId = await getCurrentClinicId();
+    
+    if (!clinicaId) {
+      redirect('/login');
+    }
 
-  const { data: turnos, error } = await listarTurnos(clinicaId);
+    const supabase = createClient();
+    const { data, error: supabaseError } = await supabase
+      .from('turnos')
+      .select('*')
+      .eq('clinica_id', clinicaId)
+      .order('nome');
 
-  if (error) {
-    throw new Error('Falha ao carregar turnos: ' + error.message);
+    if (supabaseError) {
+      throw new Error(supabaseError.message);
+    }
+
+    turnos = data || [];
+  } catch (err) {
+    console.error('Erro ao carregar turnos:', err);
+    error = err instanceof Error ? err : new Error('Erro desconhecido');
   }
 
   return (
@@ -71,8 +97,28 @@ export default async function TurnosPage({ searchParams }: { searchParams?: Sear
         </div>
       </div>
 
+      {/* Mensagem de erro */}
+      {error && (
+        <Card className="p-12 text-center border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center">
+              <Clock className="w-8 h-8 text-red-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-red-900 dark:text-red-100">Erro ao carregar turnos</h3>
+              <p className="text-red-600 dark:text-red-400 mt-1">
+                {error.message || 'Ocorreu um erro inesperado. Tente fazer login novamente.'}
+              </p>
+            </div>
+            <LinkButton href="/login" className="text-white bg-red-600 hover:bg-red-700">
+              Fazer Login
+            </LinkButton>
+          </div>
+        </Card>
+      )}
+
       {/* Lista */}
-      {(!turnos || turnos.length === 0) ? (
+      {!error && (!turnos || turnos.length === 0) ? (
         <Card variant="elevated" className="p-12">
           <EmptyState
             title="Nenhum turno encontrado"

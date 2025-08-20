@@ -1,16 +1,61 @@
 'use client'
 
-import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { LinkButton } from '@/components/ui/LinkButton'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Users, Activity, Calendar, Settings, Plus, LogOut, Building, Monitor, MapPin, Clock } from 'lucide-react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase-client'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
 
 export default function DashboardPage() {
-  const { user, clinicId, signOut } = useAuth()
+  const [user, setUser] = useState<User | null>(null)
+  const [clinicId, setClinicId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const supabase = createClient()
 
-  if (!user) {
+  useEffect(() => {
+    async function getUser() {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError || !user) {
+          router.push('/login')
+          return
+        }
+
+        setUser(user)
+
+        // Buscar clinica_id do usuário
+        const { data: clinicData } = await supabase
+          .from('usuarios_clinicas')
+          .select('clinica_id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        setClinicId(clinicData?.clinica_id ?? null)
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error)
+        router.push('/login')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getUser()
+  }, [])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -18,6 +63,10 @@ export default function DashboardPage() {
         </div>
       </div>
     )
+  }
+
+  if (!user) {
+    return null
   }
 
   return (
@@ -41,10 +90,10 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        <Button onClick={signOut} variant="outline" className="flex items-center gap-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-          <LogOut className="h-4 w-4" />
-          Sair
-        </Button>
+        <Button onClick={handleSignOut} variant="outline" className="flex items-center gap-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+           <LogOut className="h-4 w-4" />
+           Sair
+         </Button>
       </div>
 
       {/* Navigation Cards */}

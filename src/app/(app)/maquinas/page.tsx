@@ -1,14 +1,13 @@
 import { redirect } from 'next/navigation';
 import { getCurrentClinicId } from '@/lib/get-clinic';
+import { createClient } from '@/lib/supabase-server';
 import { Button } from '@/components/ui/Button';
 import { LinkButton } from '@/components/ui/LinkButton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ToastContainer } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Settings, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
-import { maquinasService, listarMaquinas } from '@/services/maquinas';
 import { Maquina } from '@/types/database';
-import { deletarMaquina } from '@/services/maquinas';
 
 
 async function deleteMaquinaAction(id: string) {
@@ -19,8 +18,14 @@ async function deleteMaquinaAction(id: string) {
     redirect('/login');
   }
   
-  const { error } = await deletarMaquina(id, clinica_id);
-  const ok = !error ? 'Máquina excluída com sucesso' : '';
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('maquinas')
+    .update({ ativa: false })
+    .eq('id', id)
+    .eq('clinica_id', clinica_id);
+    
+  const ok = !error ? 'Máquina desativada com sucesso' : '';
   const err = error ? encodeURIComponent(error.message) : '';
   const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
   redirect(`/maquinas${params}`);
@@ -29,16 +34,38 @@ async function deleteMaquinaAction(id: string) {
 type SearchParams = { ok?: string; error?: string };
 
 export default async function MaquinasPage({ searchParams }: { searchParams?: SearchParams }) {
-  const clinicaId = await getCurrentClinicId();
-  
-  if (!clinicaId) {
-    redirect('/login');
-  }
+  let clinicaId: string | null = null;
+  let maquinas: Maquina[] = [];
+  let error: any = null;
 
-  const { data: maquinas, error } = await listarMaquinas(clinicaId);
+  try {
+    clinicaId = await getCurrentClinicId();
+    
+    if (!clinicaId) {
+      redirect('/login');
+    }
 
-  if (error) {
-    throw new Error('Falha ao carregar máquinas: ' + error.message);
+    const supabase = createClient();
+    const result = await supabase
+      .from('maquinas')
+      .select('*')
+      .eq('clinica_id', clinicaId)
+      .eq('ativa', true)
+      .order('identificador', { ascending: true });
+
+    if (result.error) {
+      console.error('Erro ao carregar máquinas:', result.error.message);
+      error = result.error;
+    } else {
+      maquinas = result.data || [];
+    }
+  } catch (err) {
+    console.error('Erro na página de máquinas:', err);
+    error = err;
+    // Se houver erro de autenticação, redirecionar para login
+    if (err instanceof Error && err.message.includes('permission denied')) {
+      redirect('/login');
+    }
   }
 
   return (
@@ -71,8 +98,28 @@ export default async function MaquinasPage({ searchParams }: { searchParams?: Se
         </div>
       </div>
 
+      {/* Mensagem de erro */}
+      {error && (
+        <Card className="p-12 text-center border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center">
+              <Activity className="w-8 h-8 text-red-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-red-900 dark:text-red-100">Erro ao carregar máquinas</h3>
+              <p className="text-red-600 dark:text-red-400 mt-1">
+                {error.message || 'Ocorreu um erro inesperado. Tente fazer login novamente.'}
+              </p>
+            </div>
+            <LinkButton href="/login" className="text-white bg-red-600 hover:bg-red-700">
+              Fazer Login
+            </LinkButton>
+          </div>
+        </Card>
+      )}
+
       {/* Lista de Máquinas */}
-      {!maquinas || maquinas.length === 0 ? (
+      {!error && (!maquinas || maquinas.length === 0) ? (
         <EmptyState
           title="Nenhuma máquina cadastrada"
           description="Comece adicionando a primeira máquina de hemodiálise da clínica."

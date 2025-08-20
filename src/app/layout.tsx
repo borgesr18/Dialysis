@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'sonner'
-import { AuthProvider } from '@/hooks/useAuth'
+
 import EnvDebug from '@/components/debug/EnvDebug'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
@@ -23,9 +23,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={inter.className}>
         <ErrorBoundary>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          {children}
           <Toaster position="top-right" />
           <EnvDebug />
         </ErrorBoundary>

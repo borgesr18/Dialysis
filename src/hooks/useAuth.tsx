@@ -3,7 +3,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase-client';
-import { PapelUsuario } from '@/lib/roles';
+
+// Definindo o tipo localmente para evitar dependências de server components
+export type PapelUsuario = 'ADMIN' | 'GESTOR' | 'ENFERMAGEM' | 'TECNICO' | 'FARMACIA' | 'MEDICO' | 'VISUALIZADOR';
 
 interface AuthContextType {
   user: User | null;

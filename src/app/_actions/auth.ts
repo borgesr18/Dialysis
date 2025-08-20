@@ -47,11 +47,7 @@ export async function signup(formData: FormData) {
     const { data: clinica, error: clinicaError } = await supabase
       .from('clinicas')
       .insert({
-        nome: data.options.data.nome_clinica,
-        endereco: '',
-        telefone: '',
-        email: data.email,
-        ativa: true
+        nome: data.options.data.nome_clinica
       })
       .select()
       .single()
@@ -64,10 +60,9 @@ export async function signup(formData: FormData) {
     const { error: perfilError } = await supabase
       .from('perfis_usuarios')
       .insert({
-        usuario_id: authData.user.id,
-        nome_completo: data.options.data.nome_completo,
-        email: data.email,
-        ativo: true
+        id: authData.user.id,
+        nome: data.options.data.nome_completo,
+        papel: 'ADMIN'
       })
 
     if (perfilError) {
@@ -78,10 +73,8 @@ export async function signup(formData: FormData) {
     const { error: associacaoError } = await supabase
       .from('usuarios_clinicas')
       .insert({
-        usuario_id: authData.user.id,
-        clinica_id: clinica.id,
-        papel: 'admin',
-        ativo: true
+        user_id: authData.user.id,
+        clinica_id: clinica.id
       })
 
     if (associacaoError) {
@@ -116,17 +109,12 @@ export async function getUserClinica() {
     .from('usuarios_clinicas')
     .select(`
       clinica_id,
-      papel,
       clinicas (
         id,
-        nome,
-        endereco,
-        telefone,
-        email
+        nome
       )
     `)
-    .eq('usuario_id', user.id)
-    .eq('ativo', true)
+    .eq('user_id', user.id)
     .single()
 
   return usuarioClinica

@@ -1,14 +1,18 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
-import { requireSignedIn } from '@/lib/roles';
+// import { requireSignedIn } from '@/lib/roles'; // Temporariamente removido
 
 export const dynamic = 'force-dynamic';
 
 async function createClinicaAction(formData: FormData) {
   'use server';
   
-  const user = await requireSignedIn();
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    redirect('/login');
+  }
   
   const nome = String(formData.get('nome') ?? '').trim();
   const cidade = String(formData.get('cidade') ?? '').trim();
@@ -49,11 +53,19 @@ async function createClinicaAction(formData: FormData) {
   redirect('/dashboard');
 }
 
-export default function OnboardingPage({
+export default async function OnboardingPage({
   searchParams,
 }: {
   searchParams?: { error?: string };
 }) {
+  // const user = await requireSignedIn(); // Temporariamente removido
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    redirect('/login');
+  }
+
   const error = searchParams?.error;
 
   return (

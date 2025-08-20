@@ -23,7 +23,6 @@ export class PacientesService {
         .from('pacientes')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .eq('ativo', true)
         .order('nome_completo', { ascending: true });
 
       return { data, error };
@@ -55,7 +54,6 @@ export class PacientesService {
         .from('pacientes')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .eq('ativo', true)
         .ilike('nome_completo', `%${nome}%`)
         .order('nome_completo', { ascending: true });
 
@@ -70,10 +68,7 @@ export class PacientesService {
     try {
       const { data, error } = await this.supabase
         .from('pacientes')
-        .insert({
-          ...paciente,
-          ativo: true
-        })
+        .insert(paciente)
         .select()
         .single();
 
@@ -108,14 +103,9 @@ export class PacientesService {
     try {
       const { data, error } = await this.supabase
         .from('pacientes')
-        .update({
-          ativo: false,
-          updated_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', id)
-        .eq('clinica_id', clinicaId)
-        .select()
-        .single();
+        .eq('clinica_id', clinicaId);
 
       return { data, error };
     } catch (error) {
@@ -126,18 +116,8 @@ export class PacientesService {
   // Reativar paciente
   async reativarPaciente(id: string, clinicaId: string): Promise<{ data: Paciente | null; error: any }> {
     try {
-      const { data, error } = await this.supabase
-        .from('pacientes')
-        .update({
-          ativo: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .eq('clinica_id', clinicaId)
-        .select()
-        .single();
-
-      return { data, error };
+      // Método não aplicável - pacientes não podem ser reativados após exclusão
+       return { data: null, error: new Error('Operação não suportada') };
     } catch (error) {
       return { data: null, error };
     }
@@ -150,8 +130,7 @@ export class PacientesService {
         .from('pacientes')
         .select('id')
         .eq('clinica_id', clinicaId)
-        .eq('cpf', cpf)
-        .eq('ativo', true);
+        .eq('cpf', cpf);
 
       if (excludeId) {
         query = query.neq('id', excludeId);
@@ -175,8 +154,7 @@ export class PacientesService {
       const { count, error } = await this.supabase
         .from('pacientes')
         .select('*', { count: 'exact', head: true })
-        .eq('clinica_id', clinicaId)
-        .eq('ativo', true);
+        .eq('clinica_id', clinicaId);
 
       return { count: count || 0, error };
     } catch (error) {
@@ -197,8 +175,7 @@ export class PacientesService {
       let query = this.supabase
         .from('pacientes')
         .select('*', { count: 'exact' })
-        .eq('clinica_id', clinicaId)
-        .eq('ativo', true);
+        .eq('clinica_id', clinicaId);
 
       if (search) {
         query = query.or(`nome_completo.ilike.%${search}%,cpf.ilike.%${search}%`);
