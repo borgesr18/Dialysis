@@ -46,52 +46,113 @@ export default function DebugPage() {
 
   const runTests = async () => {
     // Test 1: Environment Variables - Detailed Analysis
-    const envVariables = [
+    const isClient = typeof window !== 'undefined';
+    
+    // Client-side variables (NEXT_PUBLIC_*)
+    const clientEnvVariables = [
       'NEXT_PUBLIC_SUPABASE_URL',
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY', 
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY'
+    ];
+    
+    // Server-side variables (checked via API)
+    const serverEnvVariables = [
       'SUPABASE_SERVICE_ROLE_KEY'
     ];
 
-    const envInfo: EnvironmentInfo[] = envVariables.map(variable => {
+    const envInfo: EnvironmentInfo[] = [];
+    
+    // Check client-side variables
+    clientEnvVariables.forEach(variable => {
       const value = process.env[variable];
-      return {
+      envInfo.push({
         variable,
         present: !!value,
         value: value,
         masked: maskValue(value)
-      };
+      });
     });
+    
+    // For server-side variables, we need to check differently
+    if (isClient) {
+      // In client, we'll try to create admin client to test if SERVICE_ROLE_KEY works
+      try {
+        const adminClient = createAdminClient();
+        envInfo.push({
+          variable: 'SUPABASE_SERVICE_ROLE_KEY',
+          present: true,
+          value: 'Available (server-side)',
+          masked: 'SERVER_SIDE_ONLY'
+        });
+      } catch (error) {
+        envInfo.push({
+          variable: 'SUPABASE_SERVICE_ROLE_KEY',
+          present: false,
+          value: undefined,
+          masked: 'NOT_SET'
+        });
+      }
+    } else {
+      // Server-side check
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      envInfo.push({
+        variable: 'SUPABASE_SERVICE_ROLE_KEY',
+        present: !!serviceRoleKey,
+        value: serviceRoleKey,
+        masked: maskValue(serviceRoleKey)
+      });
+    }
 
     setEnvironmentInfo(envInfo);
 
     const missingVars = envInfo.filter(info => !info.present).map(info => info.variable);
     const presentVars = envInfo.filter(info => info.present).map(info => info.variable);
 
+    const totalVars = clientEnvVariables.length + serverEnvVariables.length;
+    
     if (missingVars.length === 0) {
       updateTest(0, {
         status: 'success',
-        message: `All ${envVariables.length} environment variables are present`,
+        message: `All ${totalVars} environment variables are present`,
         details: {
           present: presentVars,
           missing: [],
-          environment: typeof window !== 'undefined' ? 'client' : 'server',
-          nodeEnv: process.env.NODE_ENV
+          environment: isClient ? 'client' : 'server',
+          nodeEnv: process.env.NODE_ENV,
+          clientVars: clientEnvVariables,
+          serverVars: serverEnvVariables
         }
       });
     } else {
+      const missingClientVars = missingVars.filter(v => clientEnvVariables.includes(v));
+      const missingServerVars = missingVars.filter(v => serverEnvVariables.includes(v));
+      
       updateTest(0, {
         status: 'error',
-        message: `Missing ${missingVars.length}/${envVariables.length} environment variables: ${missingVars.join(', ')}`,
+        message: `Missing ${missingVars.length}/${totalVars} environment variables: ${missingVars.join(', ')}`,
         details: {
           present: presentVars,
           missing: missingVars,
-          environment: typeof window !== 'undefined' ? 'client' : 'server',
+          missingClientVars,
+          missingServerVars,
+          environment: isClient ? 'client' : 'server',
           nodeEnv: process.env.NODE_ENV,
           suggestions: [
-            'Check if .env.local file exists in project root',
-            'Verify environment variables are set in Vercel dashboard',
-            'Ensure variables start with NEXT_PUBLIC_ for client-side access',
-            'Check if deployment has the latest environment variables'
+            '🔧 LOCAL DEVELOPMENT:',
+            '  • Check if .env.local file exists in project root',
+            '  • Ensure .env.local contains: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY',
+            '  • Restart development server after adding variables',
+            '',
+            '🚀 VERCEL DEPLOYMENT:',
+            '  • Go to Vercel Dashboard → Project → Settings → Environment Variables',
+            '  • Add: NEXT_PUBLIC_SUPABASE_URL (Production + Preview + Development)',
+            '  • Add: NEXT_PUBLIC_SUPABASE_ANON_KEY (Production + Preview + Development)',
+            '  • Add: SUPABASE_SERVICE_ROLE_KEY (Production + Preview + Development)',
+            '  • Redeploy after adding variables',
+            '',
+            '⚠️ IMPORTANT:',
+            '  • NEXT_PUBLIC_* variables are exposed to the browser',
+            '  • SUPABASE_SERVICE_ROLE_KEY is server-side only (never exposed to client)',
+            '  • Check Supabase project settings for correct URL and keys'
           ]
         }
       });
