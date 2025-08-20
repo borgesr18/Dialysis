@@ -61,9 +61,21 @@ export default function DebugPage() {
 
     const envInfo: EnvironmentInfo[] = [];
     
-    // Check client-side variables
+    // Check client-side variables - using proper client-side access
+    const getClientEnvVar = (name: string) => {
+      // In Next.js, NEXT_PUBLIC_ vars must be accessed directly, not via dynamic keys
+      switch (name) {
+        case 'NEXT_PUBLIC_SUPABASE_URL':
+          return process.env.NEXT_PUBLIC_SUPABASE_URL;
+        case 'NEXT_PUBLIC_SUPABASE_ANON_KEY':
+          return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        default:
+          return undefined;
+      }
+    };
+
     clientEnvVariables.forEach(variable => {
-      const value = process.env[variable];
+      const value = getClientEnvVar(variable);
       envInfo.push({
         variable,
         present: !!value,

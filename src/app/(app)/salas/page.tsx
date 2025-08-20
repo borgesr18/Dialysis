@@ -5,7 +5,7 @@ import { LinkButton } from '@/components/ui/LinkButton';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ToastContainer } from '@/components/ui/Toast';
-import { FormSubmit } from '@/components/ui/FormSubmit';
+import { DeleteButton } from '@/components/ui/DeleteButton';
 import { Card } from '@/components/ui/Card';
 import { Building, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
 import { salasService, deletarSala, listarSalas } from '@/services/salas';
@@ -143,19 +143,15 @@ export default async function SalasPage({ searchParams }: { searchParams?: Searc
                           Editar
                         </LinkButton>
                         <form action={deleteSalaAction.bind(null, s.id)}>
-                          <FormSubmit
+                          <DeleteButton
                             variant="ghost"
                             size="sm"
                             className="hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-                            onClick={(e) => {
-                              if (!confirm('Tem certeza que deseja excluir esta sala?')) {
-                                e.preventDefault();
-                              }
-                            }}
+                            confirmMessage="Tem certeza que deseja excluir esta sala?"
                           >
                             <Trash2 className="mr-1 h-4 w-4" />
                             Excluir
-                          </FormSubmit>
+                          </DeleteButton>
                         </form>
                       </div>
                     </td>
