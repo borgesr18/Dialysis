@@ -14,13 +14,18 @@ import {
   Menu, 
   Search, 
   Bell,
-  Hospital
+  Hospital,
+  Activity,
+  FileText
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 const MENU = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { href: '/sessoes', label: 'Sessões', icon: Activity },
   { href: '/pacientes', label: 'Pacientes', icon: Users },
+  { href: '/maquinas', label: 'Máquinas', icon: Settings },
+  { href: '/relatorios', label: 'Relatórios', icon: FileText },
   { href: '/agenda', label: 'Agenda', icon: Calendar },
   { href: '/salas', label: 'Salas', icon: Building },
   { href: '/turnos', label: 'Turnos', icon: Clock },

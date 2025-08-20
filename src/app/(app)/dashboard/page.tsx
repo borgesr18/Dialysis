@@ -3,7 +3,8 @@
 import { Button } from '@/components/ui/Button'
 import { LinkButton } from '@/components/ui/LinkButton'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Users, Activity, Calendar, Settings, Plus, LogOut, Building, Monitor, MapPin, Clock } from 'lucide-react'
+import { MedicalDashboard, useMockDashboardData } from '@/components/ui/MedicalDashboard'
+import { Users, Activity, Calendar, Settings, Plus, LogOut, Building, Monitor, MapPin, Clock, FileText, Stethoscope } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
 import { useRouter } from 'next/navigation'
@@ -12,9 +13,10 @@ import type { User } from '@supabase/supabase-js'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
-  const [clinicId, setClinicId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [clinicId, setClinicId] = useState<string | null>(null)
   const router = useRouter()
+  const dashboardData = useMockDashboardData()
   const supabase = createClient()
 
   useEffect(() => {
@@ -97,14 +99,34 @@ export default function DashboardPage() {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <Link href="/sessoes">
+          <Card className="bg-gradient-to-br from-red-500 to-red-600 hover:shadow-glow transition-all duration-200 cursor-pointer border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Stethoscope className="h-8 w-8 text-red-100" />
+                    <h3 className="text-lg font-semibold text-white">
+                      Sessões
+                    </h3>
+                  </div>
+                  <p className="text-red-100 text-sm">
+                    Gerenciar sessões de hemodiálise
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link href="/pacientes">
           <Card className="bg-gradient-medical hover:shadow-glow transition-all duration-200 cursor-pointer border-0">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center space-x-3 mb-2">
-                    <Users className="h-8 w-8 text-blue-500" />
+                    <Users className="h-8 w-8 text-blue-100" />
                     <h3 className="text-lg font-semibold text-white">
                       Pacientes
                     </h3>
@@ -131,6 +153,26 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-green-100 text-sm">
                     Gerenciar equipamentos de diálise
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/relatorios">
+          <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 hover:shadow-glow transition-all duration-200 cursor-pointer border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <FileText className="h-8 w-8 text-indigo-100" />
+                    <h3 className="text-lg font-semibold text-white">
+                      Relatórios
+                    </h3>
+                  </div>
+                  <p className="text-indigo-100 text-sm">
+                    Análises e relatórios médicos
                   </p>
                 </div>
               </div>
@@ -184,6 +226,12 @@ export default function DashboardPage() {
         <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Ações Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="p-4 hover:shadow-md transition-shadow">
+            <LinkButton href="/sessoes/new" className="w-full text-white bg-gradient-to-r from-red-500 to-red-600 hover:shadow-glow transition-all duration-200">
+              <Stethoscope className="h-4 w-4 mr-2 text-red-100" />
+              Nova Sessão
+            </LinkButton>
+          </Card>
+          <Card className="p-4 hover:shadow-md transition-shadow">
             <LinkButton href="/pacientes/new" className="w-full text-white bg-gradient-medical hover:shadow-glow transition-all duration-200">
               <Users className="h-4 w-4 mr-2 text-blue-100" />
               Novo Paciente
@@ -196,45 +244,23 @@ export default function DashboardPage() {
             </LinkButton>
           </Card>
           <Card className="p-4 hover:shadow-md transition-shadow">
-            <LinkButton href="/salas/new" className="w-full text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:shadow-glow transition-all duration-200">
-              <MapPin className="h-4 w-4 mr-2 text-purple-100" />
-              Nova Sala
-            </LinkButton>
-          </Card>
-          <Card className="p-4 hover:shadow-md transition-shadow">
-            <LinkButton href="/turnos/new" className="w-full text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-glow transition-all duration-200">
-              <Clock className="h-4 w-4 mr-2 text-orange-100" />
-              Novo Turno
+            <LinkButton href="/relatorios" className="w-full text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:shadow-glow transition-all duration-200">
+              <FileText className="h-4 w-4 mr-2 text-indigo-100" />
+              Ver Relatórios
             </LinkButton>
           </Card>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader>
-          <CardTitle className="flex items-center text-gray-900 dark:text-gray-100">
-            <Activity className="w-5 h-5 mr-2 text-blue-500" />
-            Atividade Recente
-          </CardTitle>
-          <CardDescription className="text-gray-500 dark:text-gray-400">
-            Últimas ações realizadas no sistema
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Activity className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              Nenhuma atividade recente
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              As ações realizadas no sistema aparecerão aqui.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Medical Dashboard */}
+      <MedicalDashboard
+        sessionSummary={dashboardData.sessionSummary}
+        machineSummary={dashboardData.machineSummary}
+        patientSummary={dashboardData.patientSummary}
+        recentActivities={dashboardData.recentActivities}
+        alerts={dashboardData.alerts}
+        loading={dashboardData.loading}
+      />
     </div>
   )
 }

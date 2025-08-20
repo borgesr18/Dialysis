@@ -15,7 +15,9 @@ import {
   Clock,
   UserCog,
   Cog,
-  LogOut
+  LogOut,
+  Activity,
+  FileText
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,11 +27,13 @@ interface SidebarProps {
 
 const MAIN_MENU = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-400' },
+  { href: '/sessoes', label: 'Sessões', icon: Activity, color: 'text-green-400' },
   { href: '/pacientes', label: 'Pacientes', icon: Users, color: 'text-blue-400' },
-  { href: '/agenda', label: 'Agenda', icon: Calendar, color: 'text-purple-400' },
-  { href: '/salas', label: 'Salas', icon: Building, color: 'text-purple-400' },
-  { href: '/maquinas', label: 'Máquinas', icon: Settings, color: 'text-green-400' },
-  { href: '/turnos', label: 'Turnos', icon: Clock, color: 'text-orange-400' },
+  { href: '/maquinas', label: 'Máquinas', icon: Settings, color: 'text-purple-400' },
+  { href: '/relatorios', label: 'Relatórios', icon: FileText, color: 'text-orange-400' },
+  { href: '/agenda', label: 'Agenda', icon: Calendar, color: 'text-cyan-400' },
+  { href: '/salas', label: 'Salas', icon: Building, color: 'text-gray-400' },
+  { href: '/turnos', label: 'Turnos', icon: Clock, color: 'text-yellow-400' },
 ];
 
 const ADMIN_MENU = [

@@ -4,13 +4,15 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase-client';
+import { AuthProvider } from '@/hooks/useAuth';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   // Removendo verificação de admin para simplificar e evitar erros de permissão
   const isAdmin = false;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex">
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50 text-gray-900 flex">
       <aside className="hidden md:flex md:w-64 fixed inset-y-0 left-0 bg-secondary-800 text-white z-30">
         <div className="flex h-full w-full flex-col">
           <div className="p-5 border-b border-secondary-700">
@@ -149,5 +151,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </footer>
       </div>
     </div>
+    </AuthProvider>
   );
 }
