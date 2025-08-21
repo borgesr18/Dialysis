@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { AnchorHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';

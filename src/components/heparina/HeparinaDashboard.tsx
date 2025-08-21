@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Activity, AlertTriangle, Clock, Users, TrendingUp, Syringe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/progress';
 import { useSupabase } from '@/hooks/useSupabase';
 import { Database } from '@/types/database';
@@ -52,54 +53,86 @@ export default function HeparinaDashboard() {
 
   const carregarDados = async () => {
     try {
+      console.log('🔄 Iniciando carregamento dos dados do dashboard heparina...');
       setLoading(true);
-      await Promise.all([
-        carregarEstatisticasTurnos(),
-        carregarAlertasAtivos(),
-        carregarEstatisticasGerais()
-      ]);
+      
+      console.log('📊 Carregando estatísticas de turnos...');
+      await carregarEstatisticasTurnos();
+      console.log('✅ Estatísticas de turnos carregadas');
+      
+      console.log('🚨 Carregando alertas ativos...');
+      await carregarAlertasAtivos();
+      console.log('✅ Alertas ativos carregados');
+      
+      console.log('📈 Carregando estatísticas gerais...');
+      await carregarEstatisticasGerais();
+      console.log('✅ Estatísticas gerais carregadas');
+      
+      console.log('🎉 Todos os dados carregados com sucesso!');
     } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
+      console.error('❌ Erro ao carregar dados do dashboard:', error);
+      console.error('Stack trace:', error);
+      // Não deixar em loading infinito mesmo com erro
+      setLoading(false);
     } finally {
       setLoading(false);
     }
   };
 
   const carregarEstatisticasTurnos = async () => {
-    // Buscar sessões ativas do dia atual
-    const hoje = new Date().toISOString().split('T')[0];
-    
-    const { data: sessoes, error: sessoesError } = await supabase
-      .from('sessoes_hemodialise')
-      .select(`
-        turno,
-        paciente_id,
-        pacientes(
-          id,
-          nome
-        )
-      `)
-      .eq('data_sessao', hoje)
-      .eq('status', 'agendada');
+    try {
+      // Buscar sessões ativas do dia atual
+      const hoje = new Date().toISOString().split('T')[0];
+      console.log('📅 Buscando sessões para a data:', hoje);
+      
+      const { data: sessoes, error: sessoesError } = await supabase
+        .from('sessoes_hemodialise')
+        .select(`
+          turno,
+          paciente_id,
+          pacientes(
+            id,
+            nome
+          )
+        `)
+        .eq('data_sessao', hoje)
+        .eq('status', 'agendada');
 
-    if (sessoesError) throw sessoesError;
+      if (sessoesError) {
+        console.error('❌ Erro ao buscar sessões:', sessoesError);
+        throw sessoesError;
+      }
+      
+      console.log('📋 Sessões encontradas:', sessoes?.length || 0);
 
-    // Buscar doses de heparina do dia
-    const { data: doses, error: dosesError } = await supabase
-      .from('doses_heparina')
-      .select('*')
-      .gte('data_prescricao', hoje)
-      .lt('data_prescricao', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+      // Buscar doses de heparina do dia
+      console.log('💉 Buscando doses de heparina...');
+      const { data: doses, error: dosesError } = await supabase
+        .from('doses_heparina')
+        .select('*')
+        .gte('data_prescricao', hoje)
+        .lt('data_prescricao', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
-    if (dosesError) throw dosesError;
+      if (dosesError) {
+        console.error('❌ Erro ao buscar doses:', dosesError);
+        throw dosesError;
+      }
+      
+      console.log('💊 Doses encontradas:', doses?.length || 0);
 
-    // Buscar alertas ativos
-    const { data: alertas, error: alertasError } = await supabase
-      .from('alertas_heparina')
-      .select('*')
-      .eq('resolvido', false);
+      // Buscar alertas ativos
+      console.log('🚨 Buscando alertas ativos...');
+      const { data: alertas, error: alertasError } = await supabase
+        .from('alertas_heparina')
+        .select('*')
+        .eq('resolvido', false);
 
-    if (alertasError) throw alertasError;
+      if (alertasError) {
+        console.error('❌ Erro ao buscar alertas:', alertasError);
+        throw alertasError;
+      }
+      
+      console.log('⚠️ Alertas encontrados:', alertas?.length || 0);
 
     // Processar estatísticas por turno
     const turnos = ['manha', 'tarde', 'noite'];
@@ -124,65 +157,128 @@ export default function HeparinaDashboard() {
       };
     });
 
-    setEstatisticasTurnos(estatisticas);
+      setEstatisticasTurnos(estatisticas);
+      console.log('📊 Estatísticas por turno processadas:', estatisticas);
+    } catch (error) {
+      console.error('❌ Erro em carregarEstatisticasTurnos:', error);
+      // Definir dados padrão em caso de erro
+      setEstatisticasTurnos([
+        { turno: 'manha', totalPacientes: 0, comDose: 0, semDose: 0, alertas: 0, doseMedia: 0 },
+        { turno: 'tarde', totalPacientes: 0, comDose: 0, semDose: 0, alertas: 0, doseMedia: 0 },
+        { turno: 'noite', totalPacientes: 0, comDose: 0, semDose: 0, alertas: 0, doseMedia: 0 }
+      ]);
+      throw error;
+    }
   };
 
   const carregarAlertasAtivos = async () => {
-    const { data: alertas, error } = await supabase
-      .from('alertas_heparina')
-      .select(`
-        *,
-        doses_heparina(
-          paciente_id,
-          pacientes(
-            id,
-            nome_completo,
-            cpf
+    try {
+      console.log('🚨 Carregando alertas ativos detalhados...');
+      const { data: alertas, error } = await supabase
+        .from('alertas_heparina')
+        .select(`
+          *,
+          doses_heparina(
+            paciente_id,
+            pacientes(
+              id,
+              nome_completo,
+              cpf
+            )
           )
-        )
-      `)
-      .eq('resolvido', false)
-      .order('data_criacao', { ascending: false })
-      .limit(10);
+        `)
+        .eq('resolvido', false)
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-    if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar alertas detalhados:', error);
+        throw error;
+      }
 
-    setAlertasAtivos(alertas || []);
+      console.log('🚨 Alertas detalhados carregados:', alertas?.length || 0);
+      setAlertasAtivos(alertas || []);
+    } catch (error) {
+      console.error('❌ Erro em carregarAlertasAtivos:', error);
+      setAlertasAtivos([]);
+      throw error;
+    }
   };
 
   const carregarEstatisticasGerais = async () => {
-    const hoje = new Date().toISOString().split('T')[0];
-    
-    // Total de pacientes ativos
-    const { count: totalPacientes } = await supabase
-      .from('pacientes')
-      .select('*', { count: 'exact', head: true })
-      .eq('ativo', true);
+    try {
+      const hoje = new Date().toISOString().split('T')[0];
+      console.log('📈 Carregando estatísticas gerais para:', hoje);
+      
+      // Total de pacientes ativos
+      console.log('👥 Contando pacientes ativos...');
+      const { count: totalPacientes, error: pacientesError } = await supabase
+        .from('pacientes')
+        .select('*', { count: 'exact', head: true })
+        .eq('ativo', true);
 
-    // Doses prescritas hoje
-    const { data: dosesHoje, count: totalComDose } = await supabase
-      .from('doses_heparina')
-      .select('dose_heparina', { count: 'exact' })
-      .gte('data_prescricao', hoje)
-      .lt('data_prescricao', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+      if (pacientesError) {
+        console.error('❌ Erro ao contar pacientes:', pacientesError);
+        throw pacientesError;
+      }
+      
+      console.log('👥 Total de pacientes ativos:', totalPacientes);
 
-    // Alertas ativos
-    const { count: totalAlertas } = await supabase
-      .from('alertas_heparina')
-      .select('*', { count: 'exact', head: true })
-      .eq('resolvido', false);
+      // Doses prescritas hoje
+      console.log('💉 Contando doses prescritas hoje...');
+      const { data: dosesHoje, count: totalComDose, error: dosesError } = await supabase
+        .from('doses_heparina')
+        .select('dose_heparina', { count: 'exact' })
+        .gte('data_prescricao', hoje)
+        .lt('data_prescricao', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
-    const doseMediaGeral = dosesHoje && dosesHoje.length > 0
-      ? dosesHoje.reduce((acc: number, d: any) => acc + (d.dose_heparina || 0), 0) / dosesHoje.length
-      : 0;
+      if (dosesError) {
+        console.error('❌ Erro ao contar doses:', dosesError);
+        throw dosesError;
+      }
+      
+      console.log('💊 Total de doses prescritas hoje:', totalComDose);
 
-    setEstatisticasGerais({
-      totalPacientes: totalPacientes || 0,
-      totalComDose: totalComDose || 0,
-      totalSemDose: (totalPacientes || 0) - (totalComDose || 0),
-      totalAlertas: totalAlertas || 0,
-      doseMediaGeral
-    });
+      // Alertas ativos
+      console.log('🚨 Contando alertas ativos...');
+      const { count: totalAlertas, error: alertasError } = await supabase
+        .from('alertas_heparina')
+        .select('*', { count: 'exact', head: true })
+        .eq('resolvido', false);
+        
+      if (alertasError) {
+        console.error('❌ Erro ao contar alertas:', alertasError);
+        throw alertasError;
+      }
+      
+      console.log('⚠️ Total de alertas ativos:', totalAlertas);
+
+      const doseMediaGeral = dosesHoje && dosesHoje.length > 0
+        ? dosesHoje.reduce((acc: number, d: any) => acc + (d.dose_heparina || 0), 0) / dosesHoje.length
+        : 0;
+
+      const estatisticas = {
+        totalPacientes: totalPacientes || 0,
+        totalComDose: totalComDose || 0,
+        totalSemDose: (totalPacientes || 0) - (totalComDose || 0),
+        totalAlertas: totalAlertas || 0,
+        doseMediaGeral
+      };
+      
+      console.log('📊 Estatísticas gerais calculadas:', estatisticas);
+      setEstatisticasGerais(estatisticas);
+    } catch (error) {
+      console.error('❌ Erro em carregarEstatisticasGerais:', error);
+      // Definir dados padrão em caso de erro
+      setEstatisticasGerais({
+        totalPacientes: 0,
+        totalComDose: 0,
+        totalSemDose: 0,
+        totalAlertas: 0,
+        doseMediaGeral: 0
+      });
+      throw error;
+    }
   };
 
   const formatarTurno = (turno: string) => {
@@ -218,6 +314,39 @@ export default function HeparinaDashboard() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Fallback para quando não há dados
+  const temDados = estatisticasGerais.totalPacientes > 0 || 
+                   estatisticasGerais.totalComDose > 0 || 
+                   alertasAtivos.length > 0 || 
+                   estatisticasTurnos.some(turno => turno.totalPacientes > 0);
+
+  if (!temDados) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Syringe className="w-8 h-8 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum dado encontrado</h3>
+          <p className="text-gray-600 mb-4">
+            Não há dados de heparina disponíveis no momento. Isso pode acontecer se:
+          </p>
+          <ul className="text-sm text-gray-500 text-left space-y-1 mb-6">
+            <li>• Nenhuma dose de heparina foi prescrita ainda</li>
+            <li>• Não há sessões de diálise registradas</li>
+            <li>• Os dados ainda estão sendo sincronizados</li>
+          </ul>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Atualizar página
+          </Button>
+        </div>
       </div>
     );
   }

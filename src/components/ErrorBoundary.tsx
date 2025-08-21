@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   children: ReactNode;
@@ -63,18 +64,18 @@ class ErrorBoundary extends Component<Props, State> {
             </p>
 
             <div className="flex gap-3 mb-6">
-              <button
+              <Button
                 onClick={() => window.location.reload()}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
                 Recarregar Página
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => window.history.back()}
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
               >
                 Voltar
-              </button>
+              </Button>
             </div>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (

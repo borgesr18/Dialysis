@@ -19,6 +19,7 @@ import {
   FileText
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { Button } from '@/components/ui/Button';
 
 const MENU = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -80,10 +81,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
 
 
-          <button className="flex w-full items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-secondary-700 hover:text-white dark:hover:bg-gray-700 transition-colors duration-200">
+          <Button className="flex w-full items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-secondary-700 hover:text-white dark:hover:bg-gray-700 transition-colors duration-200">
             <Settings className="w-5 h-5" />
             <span>Configurações</span>
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -91,9 +92,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <header className={clsx('bg-white dark:bg-gray-800 py-4 px-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20',
         open ? 'ml-64' : 'ml-0')}>
         <div className="flex items-center">
-          <button onClick={() => setOpen((v) => !v)} className="mr-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+          <Button onClick={() => setOpen((v) => !v)} className="mr-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
             <Menu className="w-5 h-5" />
-          </button>
+          </Button>
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
             {MENU.find((m) => pathname?.startsWith(m.href))?.label ?? 'Dashboard'}
           </h2>
@@ -109,12 +110,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           </div>
           <ThemeToggle />
-          <button className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200">
+          <Button className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200">
             <Bell className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
               3
             </span>
-          </button>
+          </Button>
           <div className="hidden md:flex items-center space-x-2">
             <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg"
                  className="w-10 h-10 rounded-full border-2 border-primary-500" alt="avatar" />

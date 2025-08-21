@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { AlertCircle, Save, X, Calendar, Clock, User, Activity } from 'lucide-react';
 import { Card } from './Card';

@@ -170,7 +170,7 @@ export function MedicalTable({
         {expandedActions === row.id && (
           <div className="absolute right-0 top-8 z-10 bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[120px]">
             {visibleActions.map(action => (
-              <button
+              <Button
                 key={action.key}
                 onClick={() => {
                   action.onClick(row);
@@ -184,7 +184,7 @@ export function MedicalTable({
               >
                 {action.icon}
                 <span>{action.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
         )}

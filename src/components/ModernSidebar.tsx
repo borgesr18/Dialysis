@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
+import { Button } from '@/components/ui/Button';
 import { 
   Hospital, 
   ChevronLeft, 
@@ -129,7 +130,7 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
           </div>
           
           {/* Toggle Button */}
-          <button
+          <Button
             onClick={onToggle}
             className="p-2 rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 transition-all duration-300 shadow-soft hover:shadow-glow hover:scale-110 group"
           >
@@ -138,7 +139,7 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
             ) : (
               <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-white transition-colors duration-300" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -161,7 +162,7 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
 
       {/* Footer */}
       <div className="p-3 border-t border-gray-700/50">
-        <button className={clsx(
+        <Button className={clsx(
           'flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-300 text-gray-300 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-500/20 hover:text-red-400 w-full group hover:shadow-soft',
           !isOpen && 'justify-center'
         )}>
@@ -177,7 +178,7 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
               <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-800 rotate-45"></div>
             </div>
           )}
-        </button>
+        </Button>
       </div>
     </aside>
   );

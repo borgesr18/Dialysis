@@ -1,3 +1,5 @@
+'use client';
+
 import { TextareaHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';

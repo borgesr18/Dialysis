@@ -3,6 +3,7 @@
 import { InputHTMLAttributes, forwardRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Button } from './Button';
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
@@ -154,7 +155,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
           
           {!loading && isPassword && (
-            <button
+            <Button
               type="button"
               className={clsx(
                 'absolute top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200',
@@ -165,7 +166,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               <div className={iconSize}>
                 {showPassword ? <EyeOff /> : <Eye />}
               </div>
-            </button>
+            </Button>
           )}
           
           {!loading && !isPassword && rightIcon && (

@@ -1,3 +1,5 @@
+'use client';
+
 import { clsx } from 'clsx';
 import { LucideIcon, Clock, Play, Pause, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 

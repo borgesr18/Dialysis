@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { clsx } from 'clsx';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { Button } from './Button';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -201,7 +202,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove?: (id: string) 
             </p>
           )}
           {toast.action && (
-            <button
+            <Button
               onClick={toast.action.onClick}
               className={clsx(
                 'mt-2 text-sm font-medium hover:underline',
@@ -209,16 +210,16 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove?: (id: string) 
               )}
             >
               {toast.action.label}
-            </button>
+            </Button>
           )}
         </div>
         
-        <button
+        <Button
           onClick={() => onRemove?.(toast.id)}
           className="flex-shrink-0 ml-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

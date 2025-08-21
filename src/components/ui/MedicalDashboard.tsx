@@ -13,6 +13,7 @@ import {
   RefreshCw,
   CheckCircle,
 } from 'lucide-react';
+import { Button } from './Button';
 import { Card } from './Card';
 import { StatusBadge } from './StatusBadge';
 import { MedicalStatCard } from './MedicalStatCard';
@@ -236,7 +237,7 @@ export function MedicalDashboard({
         </div>
         
         {onRefresh && (
-          <button
+          <Button
             onClick={handleRefresh}
             disabled={refreshing || loading}
             className={clsx(
@@ -248,7 +249,7 @@ export function MedicalDashboard({
               <Activity className="w-4 h-4" />
             </div>
             <span>{refreshing ? 'Atualizando...' : 'Atualizar'}</span>
-          </button>
+          </Button>
         )}
       </div>
 

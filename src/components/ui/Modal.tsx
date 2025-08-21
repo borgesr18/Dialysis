@@ -1,7 +1,9 @@
+'use client';
+
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
-import { X, AlertTriangle, CheckCircle, Info, AlertCircle } from 'lucide-react';
+import { X, AlertTriangle, AlertCircle, Info, CheckCircle } from 'lucide-react';
 import { Button } from './Button';
 
 interface ModalProps {
@@ -104,12 +106,12 @@ const Modal: React.FC<ModalProps> = ({
             )}
             
             {showCloseButton && (
-              <button
+              <Button
                 onClick={onClose}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             )}
           </div>
         )}

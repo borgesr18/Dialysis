@@ -1,3 +1,5 @@
+'use client';
+
 import { LucideIcon } from 'lucide-react';
 import { Card } from './Card';
 import { clsx } from 'clsx';
