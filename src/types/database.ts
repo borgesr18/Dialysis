@@ -274,6 +274,71 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['exames_laboratoriais']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['exames_laboratoriais']['Insert']>;
       };
+      doses_heparina: {
+        Row: {
+          id: string;
+          paciente_id: string;
+          sessao_id?: string;
+          dose_heparina?: number;
+          dose_cateter?: number;
+          tipo_acesso: 'FAV' | 'CDL' | 'PC';
+          turno: string;
+          data_aplicacao: string;
+          observacoes?: string;
+          usuario_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['doses_heparina']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['doses_heparina']['Insert']>;
+      };
+      historico_alteracoes_dose: {
+        Row: {
+          id: string;
+          dose_heparina_id: string;
+          dose_anterior?: number;
+          dose_nova?: number;
+          dose_cateter_anterior?: number;
+          dose_cateter_nova?: number;
+          motivo_alteracao?: string;
+          usuario_id: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['historico_alteracoes_dose']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['historico_alteracoes_dose']['Insert']>;
+      };
+      alertas_heparina: {
+        Row: {
+          id: string;
+          dose_heparina_id: string;
+          tipo_alerta: 'dose_alta' | 'dose_baixa' | 'dose_cateter_alta' | 'dose_cateter_baixa';
+          valor_dose: number;
+          limite_configurado: number;
+          resolvido: boolean;
+          data_resolucao?: string;
+          usuario_resolucao?: string;
+          observacoes?: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['alertas_heparina']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['alertas_heparina']['Insert']>;
+      };
+      configuracoes_alerta: {
+        Row: {
+          id: string;
+          tipo_acesso: 'FAV' | 'CDL' | 'PC';
+          dose_minima: number;
+          dose_maxima: number;
+          dose_cateter_minima?: number;
+          dose_cateter_maxima?: number;
+          ativo: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['configuracoes_alerta']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['configuracoes_alerta']['Insert']>;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -305,6 +370,10 @@ export type SessaoHemodialise = Database['public']['Tables']['sessoes_hemodialis
 export type HistoricoAcesso = Database['public']['Tables']['historico_acessos']['Row'];
 export type Prescricao = Database['public']['Tables']['prescricoes']['Row'];
 export type ExameLaboratorial = Database['public']['Tables']['exames_laboratoriais']['Row'];
+export type DoseHeparina = Database['public']['Tables']['doses_heparina']['Row'];
+export type HistoricoAlteracaoDose = Database['public']['Tables']['historico_alteracoes_dose']['Row'];
+export type AlertaHeparina = Database['public']['Tables']['alertas_heparina']['Row'];
+export type ConfiguracaoAlerta = Database['public']['Tables']['configuracoes_alerta']['Row'];
 
 // Tipos para inserção
 export type PacienteInsert = Database['public']['Tables']['pacientes']['Insert'];
@@ -316,6 +385,10 @@ export type SessaoHemodialiseInsert = Database['public']['Tables']['sessoes_hemo
 export type HistoricoAcessoInsert = Database['public']['Tables']['historico_acessos']['Insert'];
 export type PrescricaoInsert = Database['public']['Tables']['prescricoes']['Insert'];
 export type ExameLaboratorialInsert = Database['public']['Tables']['exames_laboratoriais']['Insert'];
+export type DoseHeparinaInsert = Database['public']['Tables']['doses_heparina']['Insert'];
+export type HistoricoAlteracaoDoseInsert = Database['public']['Tables']['historico_alteracoes_dose']['Insert'];
+export type AlertaHeparinaInsert = Database['public']['Tables']['alertas_heparina']['Insert'];
+export type ConfiguracaoAlertaInsert = Database['public']['Tables']['configuracoes_alerta']['Insert'];
 
 // Tipos para atualização
 export type PacienteUpdate = Database['public']['Tables']['pacientes']['Update'];
@@ -327,3 +400,7 @@ export type SessaoHemodialiseUpdate = Database['public']['Tables']['sessoes_hemo
 export type HistoricoAcessoUpdate = Database['public']['Tables']['historico_acessos']['Update'];
 export type PrescricaoUpdate = Database['public']['Tables']['prescricoes']['Update'];
 export type ExameLaboratorialUpdate = Database['public']['Tables']['exames_laboratoriais']['Update'];
+export type DoseHeparinaUpdate = Database['public']['Tables']['doses_heparina']['Update'];
+export type HistoricoAlteracaoDoseUpdate = Database['public']['Tables']['historico_alteracoes_dose']['Update'];
+export type AlertaHeparinaUpdate = Database['public']['Tables']['alertas_heparina']['Update'];
+export type ConfiguracaoAlertaUpdate = Database['public']['Tables']['configuracoes_alerta']['Update'];
