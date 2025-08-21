@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { ChevronUp, ChevronDown, MoreHorizontal, Eye, Edit, Trash2, Download, Filter } from 'lucide-react';
 import { Card } from './Card';

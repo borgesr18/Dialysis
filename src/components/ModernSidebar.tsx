@@ -17,7 +17,8 @@ import {
   Cog,
   LogOut,
   Activity,
-  FileText
+  FileText,
+  Syringe
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +30,7 @@ const MAIN_MENU = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-400' },
   { href: '/sessoes', label: 'Sessões', icon: Activity, color: 'text-green-400' },
   { href: '/pacientes', label: 'Pacientes', icon: Users, color: 'text-blue-400' },
+  { href: '/heparina', label: 'Heparina', icon: Syringe, color: 'text-red-400' },
   { href: '/maquinas', label: 'Máquinas', icon: Settings, color: 'text-purple-400' },
   { href: '/relatorios', label: 'Relatórios', icon: FileText, color: 'text-orange-400' },
   { href: '/agenda', label: 'Agenda', icon: Calendar, color: 'text-cyan-400' },

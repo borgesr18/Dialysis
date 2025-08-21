@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { ChevronDown, Check, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
