@@ -14,8 +14,13 @@ export default async function EditPacientePage({
   params: { id: string };
   searchParams?: { error?: string };
 }) {
+  console.log('EditPacientePage - Iniciando com params:', params);
+  
   const supabase = createClient();
+  console.log('EditPacientePage - Cliente Supabase criado');
+  
   const clinicaId = await getCurrentClinicId();
+  console.log('EditPacientePage - Clínica ID obtida:', clinicaId);
 
   // Validar formato UUID
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -23,6 +28,8 @@ export default async function EditPacientePage({
     redirect('/pacientes?error=' + encodeURIComponent('ID inválido'));
   }
 
+  console.log('EditPacientePage - Executando consulta para paciente ID:', params.id, 'clinica_id:', clinicaId);
+  
   const { data: p, error } = await supabase
     .from('pacientes')
     .select('id, registro, nome_completo, cidade_nome, alerta_texto')
@@ -30,7 +37,10 @@ export default async function EditPacientePage({
     .eq('clinica_id', clinicaId)
     .maybeSingle();
 
+  console.log('EditPacientePage - Resultado da consulta:', { data: p, error });
+
   if (error || !p) {
+    console.error('EditPacientePage - Erro ou paciente não encontrado:', { error, paciente: p });
     redirect('/pacientes?error=' + encodeURIComponent(error ? `Falha ao carregar paciente: ${error.message}` : 'Paciente não encontrado'));
   }
 

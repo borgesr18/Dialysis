@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { CitySelect } from '@/components/CitySelect';
+import { Button } from '@/components/ui/Button';
 
 export default function PacienteForm({
   action,
@@ -69,9 +70,9 @@ export default function PacienteForm({
       </div>
 
       <div className="pt-1">
-        <button type="submit" className="rounded-xl px-4 py-2 bg-black text-white">
+        <Button type="submit" className="rounded-xl px-4 py-2 bg-black text-white">
           Salvar
-        </button>
+        </Button>
       </div>
     </form>
   );

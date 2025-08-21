@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import { uploadDocumento, deleteDocumento, listDocumentos } from './documents/_actions';
+import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 
@@ -186,9 +187,9 @@ export default async function PacienteDetalhePage({
                       }}
                     >
                       <input type="hidden" name="docId" value={d.id} />
-                      <button className="text-sm text-red-600 hover:underline" type="submit">
+                      <Button className="text-sm text-red-600 hover:underline" type="submit">
                         Excluir
-                      </button>
+                      </Button>
                     </form>
                   </div>
                 </div>

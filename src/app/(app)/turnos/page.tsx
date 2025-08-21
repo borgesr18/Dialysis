@@ -192,6 +192,7 @@ export default async function TurnosPage({ searchParams }: { searchParams?: Sear
                           variant="ghost"
                           size="sm"
                           className="hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400"
+                          prefetch={false}
                         >
                           <Edit className="mr-1 h-4 w-4" />
                           Editar

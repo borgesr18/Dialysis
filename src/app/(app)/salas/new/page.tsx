@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Building } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,9 +53,9 @@ export default function NovaSalaPage() {
             <input className="input border rounded-md px-3 py-2" name="descricao" placeholder="Descrição" />
           </div>
           <div className="pt-2">
-            <button className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700" type="submit">
+            <Button className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700" type="submit">
               Salvar
-            </button>
+            </Button>
           </div>
         </form>
       </Card>

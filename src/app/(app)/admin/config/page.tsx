@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import { updateClinicConfig } from './_actions';
 import CitySelectField from './CitySelectField';
+import { Button } from '@/components/ui/Button';
 
 type SearchParams = { ok?: string; error?: string };
 
@@ -45,9 +46,9 @@ export default async function AdminConfigPage({ searchParams }: { searchParams?:
           <Link href="/dashboard" className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-neutral-700 hover:bg-neutral-50">
             Voltar
           </Link>
-          <button form="form-config" type="submit" className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700">
+          <Button form="form-config" type="submit" className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700">
             Salvar alterações
-          </button>
+          </Button>
         </div>
       </div>
 

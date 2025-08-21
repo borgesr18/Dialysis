@@ -1,4 +1,5 @@
 import { updatePasswordAction } from './actions';
+import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,9 +48,9 @@ export default function UpdatePasswordPage({ searchParams }: { searchParams?: { 
             />
           </div>
 
-          <button type="submit" className="rounded-xl px-4 py-2 bg-black text-white mt-2">
+          <Button type="submit" className="rounded-xl px-4 py-2 bg-black text-white mt-2">
             Atualizar senha
-          </button>
+          </Button>
         </form>
       </div>
     </div>

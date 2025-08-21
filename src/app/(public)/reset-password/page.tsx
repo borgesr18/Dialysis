@@ -1,4 +1,5 @@
 import { requestPasswordResetAction } from './actions';
+import { Button } from '@/components/ui/Button';
 
 export default function ResetPasswordPage({ searchParams }: { searchParams?: { error?: string } }) {
   const error = searchParams?.error;
@@ -12,7 +13,7 @@ export default function ResetPasswordPage({ searchParams }: { searchParams?: { e
 
         <form action={requestPasswordResetAction} className="grid gap-3">
           <input type="email" name="email" required placeholder="seu@email.com" className="border rounded-md px-3 py-2"/>
-          <button className="rounded-xl px-4 py-2 bg-black text-white">Enviar link</button>
+          <Button className="rounded-xl px-4 py-2 bg-black text-white">Enviar link</Button>
         </form>
       </div>
     </div>

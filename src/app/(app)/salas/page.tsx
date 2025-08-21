@@ -187,7 +187,8 @@ export default async function SalasPage({ searchParams }: { searchParams?: Searc
                           href={`/salas/${s.id}/edit`}
                           variant="ghost"
                           size="sm"
-                          className="hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400"
+                          className="hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400"
+                          prefetch={false}
                         >
                           <Edit className="mr-1 h-4 w-4" />
                           Editar

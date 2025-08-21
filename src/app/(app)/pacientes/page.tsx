@@ -119,7 +119,7 @@ export default async function PacientesPage() {
                    </div>
                  </div>
                  <div className="flex items-center space-x-2">
-                   <Link href={`/pacientes/${paciente.id}/edit`}>
+                   <Link href={`/pacientes/${paciente.id}/edit`} prefetch={false}>
                      <Button variant="outline" size="sm">
                        Editar
                      </Button>

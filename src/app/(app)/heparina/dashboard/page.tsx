@@ -1,10 +1,8 @@
-import { Metadata } from 'next';
-import HeparinaDashboard from '@/components/heparina/HeparinaDashboard';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Dashboard - Gestão de Heparina | Sistema de Diálise',
-  description: 'Visão geral das doses de heparina por turno',
-};
+import HeparinaDashboard from '@/components/heparina/HeparinaDashboard';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { Button } from '@/components/ui/Button';
 
 export default function HeparinaDashboardPage() {
   return (
@@ -18,7 +16,31 @@ export default function HeparinaDashboardPage() {
         </p>
       </div>
       
-      <HeparinaDashboard />
+      <ErrorBoundary
+        fallback={
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-red-500 text-xl">⚠️</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Erro no Módulo de Heparina
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Não foi possível carregar os dados do módulo de heparina. Verifique sua conexão e tente novamente.
+              </p>
+              <Button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Tentar Novamente
+              </Button>
+            </div>
+          </div>
+        }
+      >
+        <HeparinaDashboard />
+      </ErrorBoundary>
     </div>
   );
 }

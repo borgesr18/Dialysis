@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase-client';
+import { Button } from '@/components/ui/Button';
 // import { linkExistingUserByEmail, inviteUser, updateUserRole, removeMember } from './_actions'; // Temporariamente removido para evitar erros de permissão
 
 
@@ -82,9 +83,9 @@ export default function AdminMembrosPage() {
             <option value="GESTOR">GESTOR</option>
             <option value="ADMIN">ADMIN</option>
           </select>
-          <button className="rounded-lg bg-gray-400 px-4 py-2 text-white cursor-not-allowed" type="button" disabled>
+          <Button className="rounded-lg bg-gray-400 px-4 py-2 text-white cursor-not-allowed" type="button" disabled>
             Vincular (Desabilitado)
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -97,9 +98,9 @@ export default function AdminMembrosPage() {
             className="rounded-lg border px-3 py-2"
             disabled
           />
-          <button className="rounded-lg bg-gray-400 px-4 py-2 text-white cursor-not-allowed" type="button" disabled>
+          <Button className="rounded-lg bg-gray-400 px-4 py-2 text-white cursor-not-allowed" type="button" disabled>
             Enviar convite (Desabilitado)
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -129,11 +130,11 @@ export default function AdminMembrosPage() {
                         <option value="GESTOR">GESTOR</option>
                         <option value="ADMIN">ADMIN</option>
                       </select>
-                      <button className="text-gray-400 cursor-not-allowed" type="button" disabled>Atualizar (Desabilitado)</button>
+                      <Button className="text-gray-400 cursor-not-allowed" type="button" disabled>Atualizar (Desabilitado)</Button>
                     </div>
-                    <button className="text-gray-400 cursor-not-allowed" type="button" disabled>
+                    <Button className="text-gray-400 cursor-not-allowed" type="button" disabled>
                       Remover (Desabilitado)
-                    </button>
+                    </Button>
                   </div>
                 </td>
               </tr>
