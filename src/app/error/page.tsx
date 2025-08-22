@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { LinkButton } from '@/components/ui/LinkButton';
@@ -44,7 +45,7 @@ const ERROR_MESSAGES = {
   },
 };
 
-export default function ErrorPage() {
+function ErrorContent() {
   const searchParams = useSearchParams();
   const errorType = searchParams.get('message') || 'default';
   const customMessage = searchParams.get('details');
@@ -131,6 +132,60 @@ export default function ErrorPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function ErrorFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
+          </div>
+          <CardTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            Algo deu errado
+          </CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-400">
+            Ocorreu um erro inesperado.
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          <div className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            Tente novamente ou entre em contato com o suporte técnico.
+          </div>
+          
+          <div className="flex flex-col space-y-2">
+            <Button 
+              onClick={() => window.location.reload()}
+              variant="primary"
+              className="w-full"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Tentar Novamente
+            </Button>
+            
+            <LinkButton 
+              href="/dashboard"
+              variant="ghost"
+              className="w-full"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Ir para Dashboard
+            </LinkButton>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function ErrorPage() {
+  return (
+    <Suspense fallback={<ErrorFallback />}>
+      <ErrorContent />
+    </Suspense>
   );
 }
 
