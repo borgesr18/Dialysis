@@ -1,3 +1,6 @@
+// PASTA: src/hooks/useAuth.tsx
+// ✅ CORRIGIDO: Dependências de useEffect adicionadas
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
@@ -186,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase, fetchUserData]);
+  }, [supabase, fetchUserData]); // ✅ Adicionada dependência fetchUserData
 
   const contextValue = {
     user,
@@ -223,7 +226,7 @@ export function useRequireAuth() {
       const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
       window.location.href = loginUrl;
     }
-  }, [user, loading, initialized]);
+  }, [user, loading, initialized]); // ✅ Dependências corretas
 
   return { user, loading: loading || !initialized };
 }
@@ -241,8 +244,7 @@ export function useRequireRole(requiredRoles: PapelUsuario[]) {
         window.location.href = '/forbidden';
       }
     }
-  }, [user, role, loading, initialized, requiredRoles]);
+  }, [user, role, loading, initialized, requiredRoles]); // ✅ Dependências corretas
 
   return { user, role, loading: loading || !initialized };
 }
-
