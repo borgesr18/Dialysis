@@ -1,6 +1,9 @@
+// PASTA: src/components/heparina/HeparinaConsulta.tsx
+// ✅ CORRIGIDO: Função convertida para useCallback com dependências corretas
+
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Filter, AlertTriangle, Clock, MapPin, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -53,11 +56,7 @@ export default function HeparinaConsulta() {
   const [filtroTipoAcesso, setFiltroTipoAcesso] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    carregarPacientes();
-  }, []);
-
-  const carregarPacientes = async () => {
+  const carregarPacientes = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -121,7 +120,11 @@ export default function HeparinaConsulta() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]); // ✅ Adicionada dependência supabase
+
+  useEffect(() => {
+    carregarPacientes();
+  }, [carregarPacientes]); // ✅ Adicionada dependência carregarPacientes
 
   const pacientesFiltrados = useMemo(() => {
     return pacientes.filter((paciente: any) => {
@@ -143,12 +146,12 @@ export default function HeparinaConsulta() {
     });
   }, [pacientes, searchTerm, filtroTurno, filtroCidade, filtroTipoAcesso]);
 
-  const limparFiltros = () => {
+  const limparFiltros = useCallback(() => {
     setSearchTerm('');
     setFiltroTurno('');
     setFiltroCidade('');
     setFiltroTipoAcesso('');
-  };
+  }, []); // ✅ Sem dependências necessárias
 
   const contadorFiltros = [filtroTurno, filtroCidade, filtroTipoAcesso].filter(Boolean).length;
 
