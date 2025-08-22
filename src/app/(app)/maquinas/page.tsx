@@ -187,7 +187,6 @@ export default async function MaquinasPage({ searchParams }: { searchParams?: Se
                           variant="outline"
                           size="sm"
                           className="border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900"
-                          prefetch={false}
                         >
                           <Edit className="h-4 w-4" />
                         </LinkButton>

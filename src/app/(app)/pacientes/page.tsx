@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/Button';
+import { DeleteButton } from '@/components/ui/DeleteButton';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
+import { deletePaciente } from './_actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,14 +121,21 @@ export default async function PacientesPage() {
                    </div>
                  </div>
                  <div className="flex items-center space-x-2">
-                   <Link href={`/pacientes/${paciente.id}/edit`} prefetch={false}>
+                   <Link href={`/pacientes/${paciente.id}/edit`}>
                      <Button variant="outline" size="sm">
                        Editar
                      </Button>
                    </Link>
-                   <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50">
-                     Excluir
-                   </Button>
+                   <form action={deletePaciente.bind(null, paciente.id)} className="inline">
+                     <DeleteButton 
+                       variant="outline" 
+                       size="sm" 
+                       className="text-red-600 hover:bg-red-50"
+                       confirmMessage={`Tem certeza que deseja excluir o paciente ${paciente.nome_completo}?`}
+                     >
+                       Excluir
+                     </DeleteButton>
+                   </form>
                  </div>
                </div>
              </div>
