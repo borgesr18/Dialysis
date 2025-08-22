@@ -1,3 +1,6 @@
+// PASTA: src/components/ui/Toast.tsx
+// ✅ CORRIGIDO: Dependências de useCallback e useEffect adicionadas
+
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
@@ -34,6 +37,10 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast = { ...toast, id };
@@ -45,11 +52,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setTimeout(() => {
       removeToast(id);
     }, duration);
-  }, []);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
+  }, [removeToast]); // ✅ Adicionada dependência removeToast
 
   const success = useCallback((title: string, message?: string) => {
     addToast({ type: 'success', title, message });
@@ -100,6 +103,10 @@ interface ToastContainerProps {
 export function ToastContainer({ successMessage, errorMessage }: ToastContainerProps = {}) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
   // Adicionar toasts baseados nas props
   useEffect(() => {
     if (successMessage) {
@@ -112,11 +119,13 @@ export function ToastContainer({ successMessage, errorMessage }: ToastContainerP
       };
       setToasts(prev => [...prev, toast]);
       
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== id));
+      const timeoutId = setTimeout(() => {
+        removeToast(id);
       }, 5000);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [successMessage]);
+  }, [successMessage, removeToast]); // ✅ Adicionada dependência removeToast
 
   useEffect(() => {
     if (errorMessage) {
@@ -129,15 +138,13 @@ export function ToastContainer({ successMessage, errorMessage }: ToastContainerP
       };
       setToasts(prev => [...prev, toast]);
       
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== id));
+      const timeoutId = setTimeout(() => {
+        removeToast(id);
       }, 7000);
-    }
-  }, [errorMessage]);
 
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  };
+      return () => clearTimeout(timeoutId);
+    }
+  }, [errorMessage, removeToast]); // ✅ Adicionada dependência removeToast
 
   return (
     <div className="fixed top-4 right-4 z-50 space-y-3 max-w-sm w-full">
