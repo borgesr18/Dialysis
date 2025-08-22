@@ -126,3 +126,4 @@ export async function updateClinicConfig(formData: FormData) {
     redirect(`/admin/config?error=${enc(errorMessage)}`);
   }
 }
+
