@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase-client';
 
@@ -14,6 +14,7 @@ interface AuthContextType {
   clinicId: string | null;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  initialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,11 +22,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const [role, setRole] = useState<PapelUsuario | null>(null);
   const [clinicId, setClinicId] = useState<string | null>(null);
   const supabase = createClient();
 
-  const fetchUserData = async (currentUser: User | null) => {
+  const fetchUserData = useCallback(async (currentUser: User | null) => {
     if (!currentUser) {
       setRole(null);
       setClinicId(null);
@@ -33,17 +35,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Buscar papel do usuário
-      const { data: perfilData } = await supabase
+      // Buscar papel do usuário com timeout
+      const perfilPromise = supabase
         .from('perfis_usuarios')
         .select('papel')
         .eq('id', currentUser.id)
         .maybeSingle();
 
-      setRole((perfilData?.papel as PapelUsuario) || null);
-
-      // Buscar clínica do usuário
-      const { data: clinicaData } = await supabase
+      // Buscar clínica do usuário com timeout
+      const clinicaPromise = supabase
         .from('usuarios_clinicas')
         .select('clinica_id')
         .eq('user_id', currentUser.id)
@@ -51,52 +51,142 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .limit(1)
         .maybeSingle();
 
-      setClinicId(clinicaData?.clinica_id || null);
+      // Executar queries em paralelo com timeout
+      const [perfilResult, clinicaResult] = await Promise.allSettled([
+        Promise.race([
+          perfilPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]),
+        Promise.race([
+          clinicaPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ])
+      ]);
+
+      // Processar resultado do perfil
+      if (perfilResult.status === 'fulfilled' && perfilResult.value) {
+        const { data: perfilData, error: perfilError } = perfilResult.value as any;
+        if (!perfilError && perfilData) {
+          setRole((perfilData.papel as PapelUsuario) || null);
+        } else {
+          setRole(null);
+        }
+      } else {
+        console.warn('⚠️ Não foi possível carregar papel do usuário:', perfilResult.status === 'rejected' ? perfilResult.reason : 'Sem dados');
+        setRole(null);
+      }
+
+      // Processar resultado da clínica
+      if (clinicaResult.status === 'fulfilled' && clinicaResult.value) {
+        const { data: clinicaData, error: clinicaError } = clinicaResult.value as any;
+        if (!clinicaError && clinicaData) {
+          setClinicId(clinicaData.clinica_id || null);
+        } else {
+          setClinicId(null);
+        }
+      } else {
+        console.warn('⚠️ Não foi possível carregar clínica do usuário:', clinicaResult.status === 'rejected' ? clinicaResult.reason : 'Sem dados');
+        setClinicId(null);
+      }
     } catch (error) {
-      console.error('Erro ao buscar dados do usuário:', error);
+      console.error('❌ Erro ao buscar dados do usuário:', error);
       setRole(null);
       setClinicId(null);
     }
-  };
+  }, [supabase]);
 
-  const refreshUser = async () => {
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    setUser(currentUser);
-    await fetchUserData(currentUser);
-  };
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.warn('⚠️ Erro ao atualizar usuário:', error.message);
+        setUser(null);
+        return;
+      }
+      setUser(currentUser);
+      await fetchUserData(currentUser);
+    } catch (error) {
+      console.error('❌ Erro ao atualizar usuário:', error);
+      setUser(null);
+      setRole(null);
+      setClinicId(null);
+    }
+  }, [supabase, fetchUserData]);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setRole(null);
-    setClinicId(null);
-  };
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setRole(null);
+      setClinicId(null);
+    } catch (error) {
+      console.error('❌ Erro ao fazer logout:', error);
+      // Mesmo com erro, limpar estado local
+      setUser(null);
+      setRole(null);
+      setClinicId(null);
+    }
+  }, [supabase]);
 
   useEffect(() => {
+    let mounted = true;
+
     // Buscar usuário inicial
     const getInitialUser = async () => {
-      const { data: { user: initialUser } } = await supabase.auth.getUser();
-      setUser(initialUser);
-      await fetchUserData(initialUser);
-      setLoading(false);
+      try {
+        const { data: { user: initialUser }, error } = await supabase.auth.getUser();
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.warn('⚠️ Erro ao buscar usuário inicial:', error.message);
+          setUser(null);
+        } else {
+          setUser(initialUser);
+          await fetchUserData(initialUser);
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar usuário inicial:', error);
+        if (mounted) {
+          setUser(null);
+          setRole(null);
+          setClinicId(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
     };
 
     getInitialUser();
 
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
+      async (event, session) => {
+        if (!mounted) return;
+
         const currentUser = session?.user || null;
         setUser(currentUser);
-        await fetchUserData(currentUser);
+        
+        if (event === 'SIGNED_OUT') {
+          setRole(null);
+          setClinicId(null);
+        } else if (currentUser) {
+          await fetchUserData(currentUser);
+        }
+        
         setLoading(false);
+        setInitialized(true);
       }
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase, fetchUserData]);
 
   const contextValue = {
     user,
@@ -105,6 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clinicId,
     signOut,
     refreshUser,
+    initialized,
   };
 
   return (
@@ -123,25 +214,35 @@ export function useAuth() {
 }
 
 export function useRequireAuth() {
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
   
   useEffect(() => {
-    if (!loading && !user) {
-      window.location.href = '/login';
+    if (initialized && !loading && !user) {
+      // Usar router do Next.js em vez de window.location para melhor UX
+      const currentPath = window.location.pathname;
+      const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      window.location.href = loginUrl;
     }
-  }, [user, loading]);
+  }, [user, loading, initialized]);
 
-  return { user, loading };
+  return { user, loading: loading || !initialized };
 }
 
 export function useRequireRole(requiredRoles: PapelUsuario[]) {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, initialized } = useAuth();
   
   useEffect(() => {
-    if (!loading && (!user || !role || !requiredRoles.includes(role))) {
-      window.location.href = '/forbidden';
+    if (initialized && !loading) {
+      if (!user) {
+        const currentPath = window.location.pathname;
+        const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        window.location.href = loginUrl;
+      } else if (!role || !requiredRoles.includes(role)) {
+        window.location.href = '/forbidden';
+      }
     }
-  }, [user, role, loading, requiredRoles]);
+  }, [user, role, loading, initialized, requiredRoles]);
 
-  return { user, role, loading };
+  return { user, role, loading: loading || !initialized };
 }
+
