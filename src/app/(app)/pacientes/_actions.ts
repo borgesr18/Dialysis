@@ -1,120 +1,236 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { getCurrentClinicId } from '@/lib/get-clinic';
+import { requireCurrentClinicId } from '@/lib/get-clinic';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+
+// Schema de validação para dados do paciente
+const pacienteSchema = z.object({
+  registro: z.string().min(1, 'Registro é obrigatório').trim(),
+  nome_completo: z.string().min(1, 'Nome completo é obrigatório').trim(),
+  cidade_nome: z.string().optional(),
+  alerta_texto: z.string().optional(),
+  ativo: z.boolean().default(true),
+});
 
 function enc(msg: string) {
   return encodeURIComponent(msg);
 }
 
-// Normaliza dados vindos do FormData
+// Normaliza e valida dados vindos do FormData
 function parsePacienteForm(fd: FormData) {
-  const registro = String(fd.get('registro') ?? '').trim();
-  const nome_completo = String(fd.get('nome_completo') ?? '').trim();
-  const cidade_nome = (fd.get('cidade_nome') ?? '') as string;
-  const alerta_texto = (fd.get('alerta_texto') ?? '') as string;
-  const ativo = (fd.get('ativo') ?? 'true') === 'true';
+  try {
+    const rawData = {
+      registro: String(fd.get('registro') ?? '').trim(),
+      nome_completo: String(fd.get('nome_completo') ?? '').trim(),
+      cidade_nome: fd.get('cidade_nome') ? String(fd.get('cidade_nome')).trim() : undefined,
+      alerta_texto: fd.get('alerta_texto') ? String(fd.get('alerta_texto')).trim() : undefined,
+      ativo: (fd.get('ativo') ?? 'true') === 'true',
+    };
 
-  return { registro, nome_completo, cidade_nome, alerta_texto, ativo };
+    return pacienteSchema.parse(rawData);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(err => err.message).join(', ');
+      throw new Error(`Dados inválidos: ${messages}`);
+    }
+    throw error;
+  }
 }
 
 export async function createPaciente(fd: FormData) {
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId(); // lança erro se não houver vínculo
+  try {
+    const supabase = createClient();
+    const clinica_id = await requireCurrentClinicId();
 
-  const { registro, nome_completo, cidade_nome, alerta_texto, ativo } =
-    parsePacienteForm(fd);
+    const pacienteData = parsePacienteForm(fd);
 
-  // validação simples
-  if (!registro || !nome_completo) {
-    redirect(
-      `/pacientes/new?error=${enc('Registro e Nome são obrigatórios.')}`
-    );
+    const { data, error } = await supabase
+      .from('pacientes')
+      .insert({
+        clinica_id,
+        ...pacienteData,
+        cidade_nome: pacienteData.cidade_nome || null,
+        alerta_texto: pacienteData.alerta_texto || null,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('❌ Erro ao criar paciente:', error);
+      
+      let errorMessage = 'Falha ao salvar paciente';
+      
+      if (error.code === '23505') {
+        errorMessage = 'Já existe um paciente com este registro nesta clínica';
+      } else if (error.code === '23503') {
+        errorMessage = 'Dados de referência inválidos';
+      } else if (error.message) {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
+      redirect(`/pacientes/new?error=${enc(errorMessage)}`);
+    }
+
+    if (!data?.id) {
+      redirect(`/pacientes/new?error=${enc('Falha ao criar paciente: ID não retornado')}`);
+    }
+
+    revalidatePath('/pacientes');
+    redirect(`/pacientes/${data.id}?ok=${enc('Paciente criado com sucesso!')}`);
+  } catch (error) {
+    console.error('❌ Erro na ação createPaciente:', error);
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Erro interno do servidor';
+    
+    redirect(`/pacientes/new?error=${enc(errorMessage)}`);
   }
-
-  const { data, error } = await supabase
-    .from('pacientes')
-    .insert({
-      clinica_id,
-      registro,
-      nome_completo,
-      cidade_nome: cidade_nome || null,
-      alerta_texto: alerta_texto || null,
-      ativo,
-    })
-    .select('id')
-    .single();
-
-  if (error) {
-    // 23505 = unique violation (ex.: uniq_paciente_registro_por_clinica)
-    const msg =
-      error.code === '23505'
-        ? 'Já existe um paciente com este REG nesta clínica.'
-        : `Falha ao salvar: ${error.message}`;
-    redirect(`/pacientes/new?error=${enc(msg)}`);
-  }
-
-  revalidatePath('/pacientes');
-  redirect(`/pacientes/${data!.id}?ok=${enc('Paciente criado com sucesso!')}`);
 }
 
 export async function updatePaciente(id: string, fd: FormData) {
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
+  try {
+    if (!id || typeof id !== 'string') {
+      redirect(`/pacientes?error=${enc('ID do paciente é obrigatório')}`);
+    }
 
-  const { registro, nome_completo, cidade_nome, alerta_texto, ativo } =
-    parsePacienteForm(fd);
+    const supabase = createClient();
+    const clinica_id = await requireCurrentClinicId();
 
-  if (!id) {
-    redirect(`/pacientes?error=${enc('ID do paciente é obrigatório.')}`);
+    const pacienteData = parsePacienteForm(fd);
+
+    // Verificar se o paciente existe e pertence à clínica
+    const { data: existingPatient, error: checkError } = await supabase
+      .from('pacientes')
+      .select('id')
+      .eq('id', id)
+      .eq('clinica_id', clinica_id)
+      .single();
+
+    if (checkError || !existingPatient) {
+      console.error('❌ Paciente não encontrado ou sem acesso:', checkError);
+      redirect(`/pacientes?error=${enc('Paciente não encontrado ou sem permissão de acesso')}`);
+    }
+
+    const { error } = await supabase
+      .from('pacientes')
+      .update({
+        ...pacienteData,
+        cidade_nome: pacienteData.cidade_nome || null,
+        alerta_texto: pacienteData.alerta_texto || null,
+      })
+      .eq('id', id)
+      .eq('clinica_id', clinica_id);
+
+    if (error) {
+      console.error('❌ Erro ao atualizar paciente:', error);
+      
+      let errorMessage = 'Falha ao atualizar paciente';
+      
+      if (error.code === '23505') {
+        errorMessage = 'Já existe um paciente com este registro nesta clínica';
+      } else if (error.code === '23503') {
+        errorMessage = 'Dados de referência inválidos';
+      } else if (error.message) {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
+      redirect(`/pacientes/${id}/edit?error=${enc(errorMessage)}`);
+    }
+
+    revalidatePath('/pacientes');
+    revalidatePath(`/pacientes/${id}`);
+    redirect(`/pacientes/${id}?ok=${enc('Paciente atualizado com sucesso!')}`);
+  } catch (error) {
+    console.error('❌ Erro na ação updatePaciente:', error);
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Erro interno do servidor';
+    
+    const redirectUrl = id 
+      ? `/pacientes/${id}/edit?error=${enc(errorMessage)}`
+      : `/pacientes?error=${enc(errorMessage)}`;
+    
+    redirect(redirectUrl);
   }
-
-  const { error } = await supabase
-    .from('pacientes')
-    .update({
-      registro,
-      nome_completo,
-      cidade_nome: cidade_nome || null,
-      alerta_texto: alerta_texto || null,
-      ativo,
-    })
-    .eq('id', id)
-    .eq('clinica_id', clinica_id);
-
-  if (error) {
-    const msg =
-      error.code === '23505'
-        ? 'Já existe um paciente com este REG nesta clínica.'
-        : `Falha ao atualizar: ${error.message}`;
-    redirect(`/pacientes/${id}/edit?error=${enc(msg)}`);
-  }
-
-  revalidatePath('/pacientes');
-  revalidatePath(`/pacientes/${id}`);
-  redirect(`/pacientes/${id}?ok=${enc('Paciente atualizado com sucesso!')}`);
 }
 
 export async function deletePaciente(id: string) {
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
+  try {
+    if (!id || typeof id !== 'string') {
+      redirect(`/pacientes?error=${enc('ID do paciente é obrigatório')}`);
+    }
 
-  if (!id) {
-    redirect(`/pacientes?error=${enc('ID do paciente é obrigatório.')}`);
+    const supabase = createClient();
+    const clinica_id = await requireCurrentClinicId();
+
+    // Verificar se o paciente existe e pertence à clínica
+    const { data: existingPatient, error: checkError } = await supabase
+      .from('pacientes')
+      .select('id, nome_completo')
+      .eq('id', id)
+      .eq('clinica_id', clinica_id)
+      .single();
+
+    if (checkError || !existingPatient) {
+      console.error('❌ Paciente não encontrado ou sem acesso:', checkError);
+      redirect(`/pacientes?error=${enc('Paciente não encontrado ou sem permissão de acesso')}`);
+    }
+
+    // Verificar se há dependências (sessões, etc.)
+    const { data: sessions, error: sessionsError } = await supabase
+      .from('sessoes_hemodialise')
+      .select('id')
+      .eq('paciente_id', id)
+      .limit(1);
+
+    if (sessionsError) {
+      console.error('❌ Erro ao verificar dependências:', sessionsError);
+      redirect(`/pacientes/${id}?error=${enc('Erro ao verificar dependências do paciente')}`);
+    }
+
+    if (sessions && sessions.length > 0) {
+      redirect(`/pacientes/${id}?error=${enc('Não é possível excluir paciente com sessões registradas')}`);
+    }
+
+    const { error } = await supabase
+      .from('pacientes')
+      .delete()
+      .eq('id', id)
+      .eq('clinica_id', clinica_id);
+
+    if (error) {
+      console.error('❌ Erro ao excluir paciente:', error);
+      
+      let errorMessage = 'Falha ao excluir paciente';
+      
+      if (error.code === '23503') {
+        errorMessage = 'Não é possível excluir paciente com registros relacionados';
+      } else if (error.message) {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
+      redirect(`/pacientes/${id}?error=${enc(errorMessage)}`);
+    }
+
+    revalidatePath('/pacientes');
+    redirect(`/pacientes?ok=${enc(`Paciente "${existingPatient.nome_completo}" excluído com sucesso!`)}`);
+  } catch (error) {
+    console.error('❌ Erro na ação deletePaciente:', error);
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Erro interno do servidor';
+    
+    const redirectUrl = id 
+      ? `/pacientes/${id}?error=${enc(errorMessage)}`
+      : `/pacientes?error=${enc(errorMessage)}`;
+    
+    redirect(redirectUrl);
   }
-
-  const { error } = await supabase
-    .from('pacientes')
-    .delete()
-    .eq('id', id)
-    .eq('clinica_id', clinica_id);
-
-  if (error) {
-    redirect(`/pacientes/${id}?error=${enc('Falha ao excluir: ' + error.message)}`);
-  }
-
-  revalidatePath('/pacientes');
-  redirect(`/pacientes?ok=${enc('Paciente excluído com sucesso!')}`);
 }
 
