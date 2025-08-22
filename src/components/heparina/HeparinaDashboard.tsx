@@ -1,6 +1,9 @@
+// PASTA: src/components/heparina/HeparinaDashboard.tsx
+// ✅ CORRIGIDO: Função convertida para useCallback com dependências corretas
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Activity, AlertTriangle, Clock, Users, TrendingUp, Syringe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -47,11 +50,7 @@ export default function HeparinaDashboard() {
     doseMediaGeral: 0
   });
 
-  useEffect(() => {
-    carregarDados();
-  }, []);
-
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     try {
       console.log('🔄 Iniciando carregamento dos dados do dashboard heparina...');
       setLoading(true);
@@ -77,7 +76,11 @@ export default function HeparinaDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]); // ✅ Adicionada dependência supabase
+
+  useEffect(() => {
+    carregarDados();
+  }, [carregarDados]); // ✅ Adicionada dependência carregarDados
 
   const carregarEstatisticasTurnos = async () => {
     try {
@@ -102,78 +105,78 @@ export default function HeparinaDashboard() {
         console.error('❌ Erro ao buscar sessões:', sessoesError);
         throw sessoesError;
       }
-      
-      console.log('📋 Sessões encontradas:', sessoes?.length || 0);
 
-      // Buscar doses de heparina do dia
-      console.log('💉 Buscando doses de heparina...');
+      console.log(`📋 Encontradas ${sessoes?.length || 0} sessões para hoje`);
+
+      // Buscar doses de heparina para os pacientes das sessões
+      const pacienteIds = sessoes?.map((s: any) => s.paciente_id) || [];
+      
+      if (pacienteIds.length === 0) {
+        console.log('⚠️ Nenhum paciente encontrado para hoje');
+        setEstatisticasTurnos([]);
+        return;
+      }
+
       const { data: doses, error: dosesError } = await supabase
         .from('doses_heparina')
         .select('*')
-        .gte('data_prescricao', hoje)
-        .lt('data_prescricao', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+        .in('paciente_id', pacienteIds)
+        .eq('status', 'ativa');
 
       if (dosesError) {
         console.error('❌ Erro ao buscar doses:', dosesError);
         throw dosesError;
       }
-      
-      console.log('💊 Doses encontradas:', doses?.length || 0);
+
+      console.log(`💉 Encontradas ${doses?.length || 0} doses ativas`);
 
       // Buscar alertas ativos
-      console.log('🚨 Buscando alertas ativos...');
       const { data: alertas, error: alertasError } = await supabase
         .from('alertas_heparina')
         .select('*')
-        .eq('resolvido', false);
+        .in('dose_id', doses?.map(d => d.id) || [])
+        .eq('status', 'ativo');
 
       if (alertasError) {
         console.error('❌ Erro ao buscar alertas:', alertasError);
-        throw alertasError;
+        // Não falhar por causa dos alertas
       }
-      
-      console.log('⚠️ Alertas encontrados:', alertas?.length || 0);
 
-    // Processar estatísticas por turno
-    const turnos = ['manha', 'tarde', 'noite'];
-    const estatisticas = turnos.map(turno => {
-      const pacientesTurno = sessoes?.filter((s: any) => s.turno === turno) || [];
-      const pacientesIds = pacientesTurno.map((s: any) => s.paciente_id);
-      
-      const dosesturno = doses?.filter((d: any) => pacientesIds.includes(d.paciente_id)) || [];
-      const alertasTurno = alertas?.filter((a: any) => pacientesIds.includes(a.paciente_id)) || [];
-      
-      const doseMedia = dosesturno.length > 0 
-        ? dosesturno.reduce((acc: number, d: any) => acc + (d.dose_heparina || 0), 0) / dosesturno.length
-        : 0;
+      console.log(`🚨 Encontrados ${alertas?.length || 0} alertas ativos`);
 
-      return {
-        turno,
-        totalPacientes: pacientesTurno.length,
-        comDose: dosesturno.length,
-        semDose: pacientesTurno.length - dosesturno.length,
-        alertas: alertasTurno.length,
-        doseMedia
-      };
-    });
+      // Processar estatísticas por turno
+      const turnos = ['manha', 'tarde', 'noite'];
+      const estatisticas: EstatisticasTurno[] = turnos.map(turno => {
+        const sessoesTurno = sessoes?.filter((s: any) => s.turno === turno) || [];
+        const pacientesTurno = sessoesTurno.map((s: any) => s.paciente_id);
+        const dosesTurno = doses?.filter(d => pacientesTurno.includes(d.paciente_id)) || [];
+        const alertasTurno = alertas?.filter(a => dosesTurno.some(d => d.id === a.dose_id)) || [];
+        
+        const doseMedia = dosesTurno.length > 0 
+          ? dosesTurno.reduce((acc, d) => acc + (d.dose_heparina || 0), 0) / dosesTurno.length 
+          : 0;
 
-      setEstatisticasTurnos(estatisticas);
+        return {
+          turno,
+          totalPacientes: sessoesTurno.length,
+          comDose: dosesTurno.length,
+          semDose: sessoesTurno.length - dosesTurno.length,
+          alertas: alertasTurno.length,
+          doseMedia: Math.round(doseMedia)
+        };
+      });
+
       console.log('📊 Estatísticas por turno processadas:', estatisticas);
+      setEstatisticasTurnos(estatisticas);
+
     } catch (error) {
-      console.error('❌ Erro em carregarEstatisticasTurnos:', error);
-      // Definir dados padrão em caso de erro
-      setEstatisticasTurnos([
-        { turno: 'manha', totalPacientes: 0, comDose: 0, semDose: 0, alertas: 0, doseMedia: 0 },
-        { turno: 'tarde', totalPacientes: 0, comDose: 0, semDose: 0, alertas: 0, doseMedia: 0 },
-        { turno: 'noite', totalPacientes: 0, comDose: 0, semDose: 0, alertas: 0, doseMedia: 0 }
-      ]);
-      throw error;
+      console.error('❌ Erro ao carregar estatísticas de turnos:', error);
+      setEstatisticasTurnos([]);
     }
   };
 
   const carregarAlertasAtivos = async () => {
     try {
-      console.log('🚨 Carregando alertas ativos detalhados...');
       const { data: alertas, error } = await supabase
         .from('alertas_heparina')
         .select(`
@@ -187,89 +190,71 @@ export default function HeparinaDashboard() {
             )
           )
         `)
-        .eq('resolvido', false)
+        .eq('status', 'ativo')
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (error) {
-        console.error('❌ Erro ao buscar alertas detalhados:', error);
+        console.error('❌ Erro ao buscar alertas ativos:', error);
         throw error;
       }
 
-      console.log('🚨 Alertas detalhados carregados:', alertas?.length || 0);
+      console.log(`🚨 Carregados ${alertas?.length || 0} alertas ativos`);
       setAlertasAtivos(alertas || []);
+
     } catch (error) {
-      console.error('❌ Erro em carregarAlertasAtivos:', error);
+      console.error('❌ Erro ao carregar alertas ativos:', error);
       setAlertasAtivos([]);
-      throw error;
     }
   };
 
   const carregarEstatisticasGerais = async () => {
     try {
-      const hoje = new Date().toISOString().split('T')[0];
-      console.log('📈 Carregando estatísticas gerais para:', hoje);
-      
-      // Total de pacientes ativos
-      console.log('👥 Contando pacientes ativos...');
-      const { count: totalPacientes, error: pacientesError } = await supabase
+      // Buscar total de pacientes ativos
+      const { data: pacientes, error: pacientesError } = await supabase
         .from('pacientes')
-        .select('*', { count: 'exact', head: true })
+        .select('id')
         .eq('ativo', true);
 
-      if (pacientesError) {
-        console.error('❌ Erro ao contar pacientes:', pacientesError);
-        throw pacientesError;
-      }
-      
-      console.log('👥 Total de pacientes ativos:', totalPacientes);
+      if (pacientesError) throw pacientesError;
 
-      // Doses prescritas hoje
-      console.log('💉 Contando doses prescritas hoje...');
-      const { data: dosesHoje, count: totalComDose, error: dosesError } = await supabase
+      // Buscar doses ativas
+      const { data: doses, error: dosesError } = await supabase
         .from('doses_heparina')
-        .select('dose_heparina', { count: 'exact' })
-        .gte('data_prescricao', hoje)
-        .lt('data_prescricao', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+        .select('dose_heparina')
+        .eq('status', 'ativa');
 
-      if (dosesError) {
-        console.error('❌ Erro ao contar doses:', dosesError);
-        throw dosesError;
-      }
-      
-      console.log('💊 Total de doses prescritas hoje:', totalComDose);
+      if (dosesError) throw dosesError;
 
-      // Alertas ativos
-      console.log('🚨 Contando alertas ativos...');
-      const { count: totalAlertas, error: alertasError } = await supabase
+      // Buscar alertas ativos
+      const { data: alertas, error: alertasError } = await supabase
         .from('alertas_heparina')
-        .select('*', { count: 'exact', head: true })
-        .eq('resolvido', false);
-        
-      if (alertasError) {
-        console.error('❌ Erro ao contar alertas:', alertasError);
-        throw alertasError;
-      }
-      
-      console.log('⚠️ Total de alertas ativos:', totalAlertas);
+        .select('id')
+        .eq('status', 'ativo');
 
-      const doseMediaGeral = dosesHoje && dosesHoje.length > 0
-        ? dosesHoje.reduce((acc: number, d: any) => acc + (d.dose_heparina || 0), 0) / dosesHoje.length
+      if (alertasError) throw alertasError;
+
+      const totalPacientes = pacientes?.length || 0;
+      const totalComDose = doses?.length || 0;
+      const totalSemDose = totalPacientes - totalComDose;
+      const totalAlertas = alertas?.length || 0;
+      const doseMediaGeral = doses && doses.length > 0 
+        ? Math.round(doses.reduce((acc, d) => acc + (d.dose_heparina || 0), 0) / doses.length)
         : 0;
 
       const estatisticas = {
-        totalPacientes: totalPacientes || 0,
-        totalComDose: totalComDose || 0,
-        totalSemDose: (totalPacientes || 0) - (totalComDose || 0),
-        totalAlertas: totalAlertas || 0,
+        totalPacientes,
+        totalComDose,
+        totalSemDose,
+        totalAlertas,
         doseMediaGeral
       };
-      
-      console.log('📊 Estatísticas gerais calculadas:', estatisticas);
+
+      console.log('📈 Estatísticas gerais processadas:', estatisticas);
       setEstatisticasGerais(estatisticas);
+
     } catch (error) {
-      console.error('❌ Erro em carregarEstatisticasGerais:', error);
-      // Definir dados padrão em caso de erro
+      console.error('❌ Erro ao carregar estatísticas gerais:', error);
       setEstatisticasGerais({
         totalPacientes: 0,
         totalComDose: 0,
@@ -277,7 +262,6 @@ export default function HeparinaDashboard() {
         totalAlertas: 0,
         doseMediaGeral: 0
       });
-      throw error;
     }
   };
 
@@ -290,63 +274,15 @@ export default function HeparinaDashboard() {
     return turnos[turno as keyof typeof turnos] || turno;
   };
 
-  const formatarTipoAlerta = (tipo: string) => {
-    const tipos = {
-      'dose_alta': 'Dose Alta',
-      'dose_baixa': 'Dose Baixa',
-      'dose_faltante': 'Dose Faltante',
-      'interacao': 'Interação'
-    };
-    return tipos[tipo as keyof typeof tipos] || tipo;
-  };
-
-  const getCorAlerta = (tipo: string) => {
-    const cores = {
-      'dose_alta': 'bg-red-100 text-red-800 border-red-200',
-      'dose_baixa': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'dose_faltante': 'bg-orange-100 text-orange-800 border-orange-200',
-      'interacao': 'bg-purple-100 text-purple-800 border-purple-200'
-    };
-    return cores[tipo as keyof typeof cores] || 'bg-gray-100 text-gray-800 border-gray-200';
+  const calcularPorcentagem = (valor: number, total: number) => {
+    return total > 0 ? Math.round((valor / total) * 100) : 0;
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Fallback para quando não há dados
-  const temDados = estatisticasGerais.totalPacientes > 0 || 
-                   estatisticasGerais.totalComDose > 0 || 
-                   alertasAtivos.length > 0 || 
-                   estatisticasTurnos.some(turno => turno.totalPacientes > 0);
-
-  if (!temDados) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Syringe className="w-8 h-8 text-blue-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum dado encontrado</h3>
-          <p className="text-gray-600 mb-4">
-            Não há dados de heparina disponíveis no momento. Isso pode acontecer se:
-          </p>
-          <ul className="text-sm text-gray-500 text-left space-y-1 mb-6">
-            <li>• Nenhuma dose de heparina foi prescrita ainda</li>
-            <li>• Não há sessões de diálise registradas</li>
-            <li>• Os dados ainda estão sendo sincronizados</li>
-          </ul>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Atualizar página
-          </Button>
-        </div>
+        <span className="ml-2 text-gray-600">Carregando dashboard...</span>
       </div>
     );
   }
@@ -354,77 +290,62 @@ export default function HeparinaDashboard() {
   return (
     <div className="space-y-6">
       {/* Estatísticas Gerais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Total de Pacientes</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  {estatisticasGerais.totalPacientes}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Users className="h-6 w-6 text-blue-600" />
+                <p className="text-sm font-medium text-gray-600">Total Pacientes</p>
+                <p className="text-2xl font-bold text-gray-900">{estatisticasGerais.totalPacientes}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Syringe className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Com Dose Prescrita</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {estatisticasGerais.totalComDose}
-                </p>
-                <Progress 
-                  value={(estatisticasGerais.totalComDose / estatisticasGerais.totalPacientes) * 100} 
-                  className="mt-2 h-2"
-                />
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <Syringe className="h-6 w-6 text-green-600" />
+                <p className="text-sm font-medium text-gray-600">Com Dose</p>
+                <p className="text-2xl font-bold text-gray-900">{estatisticasGerais.totalComDose}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Sem Dose</p>
-                <p className="text-3xl font-bold text-orange-600">
-                  {estatisticasGerais.totalSemDose}
-                </p>
-                <Progress 
-                  value={(estatisticasGerais.totalSemDose / estatisticasGerais.totalPacientes) * 100} 
-                  className="mt-2 h-2"
-                />
-              </div>
-              <div className="p-3 bg-orange-100 rounded-full">
-                <Clock className="h-6 w-6 text-orange-600" />
+                <p className="text-2xl font-bold text-gray-900">{estatisticasGerais.totalSemDose}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Alertas Ativos</p>
-                <p className="text-3xl font-bold text-red-600">
-                  {estatisticasGerais.totalAlertas}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Dose média: {estatisticasGerais.doseMediaGeral.toFixed(0)} UI
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{estatisticasGerais.totalAlertas}</p>
               </div>
-              <div className="p-3 bg-red-100 rounded-full">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Dose Média</p>
+                <p className="text-2xl font-bold text-gray-900">{estatisticasGerais.doseMediaGeral}UI</p>
               </div>
             </div>
           </CardContent>
@@ -435,54 +356,54 @@ export default function HeparinaDashboard() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Activity className="h-5 w-5" />
-            <span>Estatísticas por Turno</span>
+            <Clock className="h-5 w-5" />
+            <span>Estatísticas por Turno - Hoje</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {estatisticasTurnos.map((turno) => (
-              <div key={turno.turno} className="p-4 border rounded-lg">
-                <h3 className="font-semibold text-lg mb-3">
-                  {formatarTurno(turno.turno)}
-                </h3>
+              <div key={turno.turno} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-gray-900">{formatarTurno(turno.turno)}</h3>
+                  <Badge variant={turno.alertas > 0 ? 'danger' : 'success'}>
+                    {turno.totalPacientes} pacientes
+                  </Badge>
+                </div>
                 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total de Pacientes</span>
-                    <span className="font-semibold">{turno.totalPacientes}</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Com dose</span>
+                    <span className="font-medium text-green-600">{turno.comDose}</span>
                   </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Com Dose</span>
-                    <span className="font-semibold text-green-600">{turno.comDose}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Sem Dose</span>
-                    <span className="font-semibold text-orange-600">{turno.semDose}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Alertas</span>
-                    <Badge variant={turno.alertas > 0 ? 'danger' : 'neutral'}>
-                      {turno.alertas}
-                    </Badge>
-                  </div>
-                  
-                  <div className="pt-2 border-t">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Dose Média</span>
-                      <span className="font-semibold">
-                        {turno.doseMedia > 0 ? `${turno.doseMedia.toFixed(0)} UI` : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-                  
                   <Progress 
-                    value={turno.totalPacientes > 0 ? (turno.comDose / turno.totalPacientes) * 100 : 0}
+                    value={calcularPorcentagem(turno.comDose, turno.totalPacientes)} 
                     className="h-2"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Sem dose</span>
+                    <span className="font-medium text-orange-600">{turno.semDose}</span>
+                  </div>
+                  <Progress 
+                    value={calcularPorcentagem(turno.semDose, turno.totalPacientes)} 
+                    className="h-2 bg-orange-200"
+                  />
+                </div>
+
+                <div className="pt-2 border-t">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Dose média</span>
+                    <span className="font-medium">{turno.doseMedia}UI</span>
+                  </div>
+                  {turno.alertas > 0 && (
+                    <div className="flex justify-between text-sm mt-1">
+                      <span className="text-gray-600">Alertas</span>
+                      <span className="font-medium text-red-600">{turno.alertas}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -491,55 +412,67 @@ export default function HeparinaDashboard() {
       </Card>
 
       {/* Alertas Ativos */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5" />
-            <span>Alertas Ativos</span>
-            {alertasAtivos.length > 0 && (
+      {alertasAtivos.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <span>Alertas Ativos</span>
               <Badge variant="danger">{alertasAtivos.length}</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {alertasAtivos.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="p-3 bg-green-100 rounded-full w-12 h-12 mx-auto mb-3">
-                <Activity className="h-6 w-6 text-green-600 mx-auto" />
-              </div>
-              <p className="text-gray-500">Nenhum alerta ativo no momento</p>
-            </div>
-          ) : (
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3">
               {alertasAtivos.map((alerta) => (
-                <div 
-                  key={alerta.id} 
-                  className={`p-4 rounded-lg border ${getCorAlerta(alerta.tipo_alerta)}`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <Badge variant="neutral" className="text-xs">
-                          {formatarTipoAlerta(alerta.tipo_alerta)}
-                        </Badge>
-                        <span className="text-sm font-medium">
-                          {alerta.doses_heparina?.pacientes?.nome_completo}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          CPF: {alerta.doses_heparina?.pacientes?.cpf}
-                        </span>
-                      </div>
-                      <p className="text-sm">Dose: {alerta.valor_dose} UI (Limite: {alerta.limite_configurado} UI)</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(alerta.created_at).toLocaleString('pt-BR')}
+                <div key={alerta.id} className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {(alerta.doses_heparina as any)?.pacientes?.nome_completo || 'Paciente não identificado'}
                       </p>
+                      <p className="text-sm text-gray-600">{alerta.tipo_alerta}</p>
                     </div>
-                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">
+                      {new Date(alerta.created_at).toLocaleDateString('pt-BR')}
+                    </p>
+                    <Badge variant="danger" className="text-xs">
+                      {alerta.prioridade}
+                    </Badge>
                   </div>
                 </div>
               ))}
             </div>
-          )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ações Rápidas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ações Rápidas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Button className="h-20 flex-col space-y-2">
+              <Syringe className="h-6 w-6" />
+              <span>Nova Prescrição</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <Activity className="h-6 w-6" />
+              <span>Consultar Doses</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <Clock className="h-6 w-6" />
+              <span>Histórico</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <TrendingUp className="h-6 w-6" />
+              <span>Relatórios</span>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
