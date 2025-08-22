@@ -9,7 +9,6 @@ export interface Database {
           email?: string;
           endereco?: string;
           telefone?: string;
-          cidade_nome?: string;
           uf?: string;
           created_at: string;
           updated_at: string;

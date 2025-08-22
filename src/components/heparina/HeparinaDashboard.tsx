@@ -135,7 +135,7 @@ export default function HeparinaDashboard() {
         .from('alertas_heparina')
         .select('*')
         .in('dose_id', doses?.map(d => d.id) || [])
-        .eq('status', 'ativo');
+        .eq('resolvido', false);
 
       if (alertasError) {
         console.error('❌ Erro ao buscar alertas:', alertasError);
@@ -190,7 +190,7 @@ export default function HeparinaDashboard() {
             )
           )
         `)
-        .eq('status', 'ativo')
+        .eq('resolvido', false)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -230,7 +230,7 @@ export default function HeparinaDashboard() {
       const { data: alertas, error: alertasError } = await supabase
         .from('alertas_heparina')
         .select('id')
-        .eq('status', 'ativo');
+        .eq('ativo', true);
 
       if (alertasError) throw alertasError;
 
@@ -439,7 +439,7 @@ export default function HeparinaDashboard() {
                       {new Date(alerta.created_at).toLocaleDateString('pt-BR')}
                     </p>
                     <Badge variant="danger" className="text-xs">
-                      {alerta.prioridade}
+                      {alerta.tipo_alerta}
                     </Badge>
                   </div>
                 </div>
