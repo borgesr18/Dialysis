@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Desabilitar export estático
+  output: undefined,
+  trailingSlash: false,
+  // Configurar para renderização dinâmica
   experimental: {
     serverActions: {
       allowedOrigins: [
@@ -9,6 +13,11 @@ const nextConfig = {
         process.env.APP_URL || '',
       ].filter(Boolean),
     },
+  },
+  // Configurações para evitar problemas de export
+  images: {
+    unoptimized: false,
+    domains: ['storage.googleapis.com'],
   },
 };
 
