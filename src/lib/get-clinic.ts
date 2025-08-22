@@ -3,17 +3,11 @@ import { cache } from 'react';
 
 // Cache da função para evitar múltiplas consultas na mesma requisição
 const getCachedClinicId = cache(async (): Promise<string | null> => {
+  const supabase = createClient();
+  
   try {
-    const supabase = createClient();
-    
-    // Verificar usuário autenticado com timeout
-    const userPromise = supabase.auth.getUser();
-    const { data: { user }, error: userError } = await Promise.race([
-      userPromise,
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout ao verificar usuário')), 5000)
-      )
-    ]);
+    // Verificar usuário autenticado
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError) {
       console.warn('⚠️ Erro ao verificar usuário:', userError.message);
@@ -25,21 +19,14 @@ const getCachedClinicId = cache(async (): Promise<string | null> => {
       return null;
     }
 
-    // Buscar clínica do usuário com timeout
-    const clinicPromise = supabase
+    // Buscar clínica do usuário
+    const { data, error } = await supabase
       .from('usuarios_clinicas')
       .select('clinica_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-
-    const { data, error } = await Promise.race([
-      clinicPromise,
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout ao buscar clínica')), 5000)
-      )
-    ]);
 
     if (error) {
       console.error('❌ Erro ao buscar clínica do usuário:', error.message);
