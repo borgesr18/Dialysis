@@ -1,5 +1,5 @@
 // PASTA: src/app/(app)/layout.tsx
-// ✅ CORRIGIDO: Substituído <img> por <Image> do Next.js com otimizações
+// ✅ CORRIGIDO: Import do ModernSidebar corrigido
 
 'use client';
 
@@ -19,7 +19,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import ModernSidebar from '@/components/ModernSidebar';
+import { ModernSidebar } from '@/components/ModernSidebar'; // ✅ CORRIGIDO: Import nomeado
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ToastProvider } from '@/components/ui/Toast';
 
