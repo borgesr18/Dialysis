@@ -15,7 +15,6 @@ interface Paciente {
   data_nascimento: string | null;
   sexo: string | null;
   telefone: string | null;
-  cidade_nome: string | null;
   codigo_ibge: number | null;
   ativo: boolean;
   alerta_texto: string | null;
@@ -108,7 +107,6 @@ export default async function PacientesPage() {
                      <div className="flex items-center space-x-4 text-sm text-gray-500">
                        <span>Registro: {paciente.registro}</span>
                        {paciente.telefone && <span>Tel: {paciente.telefone}</span>}
-                       {paciente.cidade_nome && <span>Cidade: {paciente.cidade_nome}</span>}
                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                          Ativo
                        </span>

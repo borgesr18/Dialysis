@@ -32,7 +32,7 @@ export default async function EditPacientePage({
   
   const { data: p, error } = await supabase
     .from('pacientes')
-    .select('id, registro, nome_completo, cidade_nome, alerta_texto')
+    .select('id, registro, nome_completo, alerta_texto')
     .eq('id', params.id)
     .eq('clinica_id', clinicaId)
     .maybeSingle();
@@ -55,7 +55,6 @@ export default async function EditPacientePage({
           defaults={{
             registro: p.registro,
             nomeCompleto: p.nome_completo,
-            cidadeNome: p.cidade_nome,
             alertaTexto: p.alerta_texto ?? '',
           }}
         />

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import { updateClinicConfig } from './_actions';
-import CitySelectField from './CitySelectField';
+
 import { Button } from '@/components/ui/Button';
 
 type SearchParams = { ok?: string; error?: string };
@@ -22,7 +22,6 @@ export default async function AdminConfigPage({ searchParams }: { searchParams?:
     email?: string;
     endereco?: string;
     telefone?: string;
-    cidade_nome?: string;
     uf?: string;
     fuso_horario?: string;
     observacoes?: string;
@@ -90,10 +89,7 @@ export default async function AdminConfigPage({ searchParams }: { searchParams?:
             <input name="endereco" defaultValue={clinica?.endereco ?? ''} className="border rounded-md px-3 py-2" placeholder="Rua, número, bairro" />
           </div>
 
-          <div className="grid gap-1.5">
-            <label className="text-sm text-neutral-700">Cidade (PE)</label>
-            <CitySelectField defaultValue={clinica?.cidade_nome ?? ''} />
-          </div>
+
 
           <div className="grid gap-1.5">
             <label className="text-sm text-neutral-700">UF</label>

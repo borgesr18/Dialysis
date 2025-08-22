@@ -46,8 +46,8 @@ export default function AppLayout({
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Sidebar */}
         <ModernSidebar 
-          isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)} 
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(false)}
         />
 
         {/* Main Content */}

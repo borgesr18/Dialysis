@@ -6,6 +6,7 @@ import { Toaster } from 'sonner'
 
 import EnvDebug from '@/components/debug/EnvDebug'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import { AuthProvider } from '@/hooks/useAuth'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,11 +23,13 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <ErrorBoundary>
-          {children}
-          <Toaster position="top-right" />
-          <EnvDebug />
-        </ErrorBoundary>
+        <AuthProvider>
+          <ErrorBoundary>
+            {children}
+            <Toaster position="top-right" />
+            <EnvDebug />
+          </ErrorBoundary>
+        </AuthProvider>
       </body>
     </html>
   )

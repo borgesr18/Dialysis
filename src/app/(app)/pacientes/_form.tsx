@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CitySelect } from '@/components/CitySelect';
+
 import { Button } from '@/components/ui/Button';
 
 export default function PacienteForm({
@@ -12,11 +12,10 @@ export default function PacienteForm({
   defaults?: {
     registro?: string;
     nomeCompleto?: string;
-    cidadeNome?: string | null;
     alertaTexto?: string | null;
   };
 }) {
-  const [cidade, setCidade] = useState<string>(defaults?.cidadeNome ?? '');
+
 
   return (
     <form action={action} className="grid gap-3">
@@ -50,11 +49,7 @@ export default function PacienteForm({
         />
       </div>
 
-      <div className="grid gap-1.5">
-        <label className="text-sm text-neutral-700">Cidade (PE)</label>
-        <CitySelect value={cidade} onChange={setCidade} />
-        <input type="hidden" name="cidade_nome" value={cidade} />
-      </div>
+
 
       <div className="grid gap-1.5">
         <label htmlFor="alerta_texto" className="text-sm text-neutral-700">

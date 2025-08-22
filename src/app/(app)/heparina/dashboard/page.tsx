@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import HeparinaDashboard from '@/components/heparina/HeparinaDashboard';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/Button';

@@ -10,7 +10,6 @@ type Paciente = {
   id: string;
   registro: string;
   nome_completo: string;
-  cidade_nome: string | null;
   alerta_texto: string | null;
   ativo: boolean | null;
   created_at: string;
@@ -37,7 +36,7 @@ export default async function PacienteDetalhePage({
   const { data: p, error } = await supabase
     .from('pacientes')
     .select(
-      'id, registro, nome_completo, cidade_nome, alerta_texto, ativo, created_at, updated_at'
+      'id, registro, nome_completo, alerta_texto, ativo, created_at, updated_at'
     )
     .eq('id', params.id)
     .eq('clinica_id', clinicaId)
@@ -91,10 +90,7 @@ export default async function PacienteDetalhePage({
               <div className="mt-1 text-xl font-semibold">{pac.registro}</div>
             </div>
 
-            <div>
-              <div className="text-sm text-neutral-600">Cidade</div>
-              <div className="mt-1 text-xl font-semibold">{pac.cidade_nome ?? '—'}</div>
-            </div>
+
 
             <div>
               <div className="text-sm text-neutral-600">Status</div>

@@ -15,7 +15,6 @@ async function createClinicaAction(formData: FormData) {
   }
   
   const nome = String(formData.get('nome') ?? '').trim();
-  const cidade = String(formData.get('cidade') ?? '').trim();
   
   if (!nome) {
     redirect('/onboarding?error=' + encodeURIComponent('Nome da clínica é obrigatório'));
@@ -24,7 +23,7 @@ async function createClinicaAction(formData: FormData) {
   // Criar clínica
   const { data: clinica, error: clinicaError } = await supabase
     .from('clinicas')
-    .insert({ nome, cidade })
+    .insert({ nome })
     .select('id')
     .single();
     
@@ -99,18 +98,7 @@ export default async function OnboardingPage({
             />
           </div>
           
-          <div>
-            <label htmlFor="cidade" className="block text-sm font-medium text-gray-700">
-              Cidade
-            </label>
-            <input
-              type="text"
-              id="cidade"
-              name="cidade"
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-              placeholder="Ex: São Paulo"
-            />
-          </div>
+
 
           <button
             type="submit"
