@@ -7,6 +7,16 @@ export function middleware(request: NextRequest) {
 
 	const { pathname } = request.nextUrl;
 
+	// If it's a Server Action submission, do NOT rewrite. Server Actions carry these headers.
+	const isServerAction =
+		request.headers.has('next-action') ||
+		request.headers.has('next-router-state-tree') ||
+		request.headers.get('content-type')?.includes('multipart/form-data') === true;
+
+	if (isServerAction) {
+		return NextResponse.next();
+	}
+
 	// /pacientes/new -> /api/pacientes/new
 	if (pathname === '/pacientes/new') {
 		const url = new URL('/api/pacientes/new', request.url);
