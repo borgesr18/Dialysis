@@ -28,7 +28,7 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Estado removido - sidebar sempre expandido
   const [profileOpen, setProfileOpen] = useState(false);
   const { user, signOut } = useAuth();
 
@@ -45,29 +45,17 @@ export default function AppLayout({
     <ToastProvider>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Sidebar */}
-        <ModernSidebar 
-          isOpen={sidebarOpen}
-          onToggle={() => setSidebarOpen(false)}
-        />
+        <ModernSidebar />
 
         {/* Main Content */}
-        <div className={clsx(
-          'transition-all duration-300 ease-in-out',
-          sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'
-        )}>
+        <div className="ml-64">
           {/* Top Navigation */}
-          <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+          <header className="fixed top-0 right-0 left-64 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 z-20">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 {/* Left side */}
                 <div className="flex items-center space-x-4">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="lg:hidden"
-                  >
-                    <Menu className="h-5 w-5" />
-                  </Button>
+                  {/* Menu toggle removido - sidebar sempre visível */}
                   
                   {/* Search */}
                   <div className="hidden md:block relative">
@@ -142,7 +130,7 @@ export default function AppLayout({
           </header>
 
           {/* Page Content */}
-          <main className="flex-1">
+          <main className="flex-1 pt-20">
             <div className="py-6">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <Suspense fallback={
@@ -157,13 +145,7 @@ export default function AppLayout({
           </main>
         </div>
 
-        {/* Overlay for mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+        {/* Overlay removido - sidebar sempre visível */}
       </div>
     </ToastProvider>
   );
