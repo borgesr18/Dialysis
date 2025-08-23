@@ -143,7 +143,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
         
         if (error) {
-          console.warn('⚠️ Erro ao buscar usuário inicial:', error.message);
+          // Silencia o aviso comum do Supabase quando não há sessão
+          if (error.message !== 'Auth session missing!') {
+            console.warn('⚠️ Erro ao buscar usuário inicial:', error.message);
+          }
           setUser(null);
         } else {
           setUser(initialUser);

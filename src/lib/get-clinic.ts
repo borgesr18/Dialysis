@@ -10,7 +10,10 @@ const getCachedClinicId = cache(async (): Promise<string | null> => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError) {
-      console.warn('⚠️ Erro ao verificar usuário:', userError.message);
+      // Silencia o aviso comum do Supabase quando não há sessão
+      if (userError.message !== 'Auth session missing!') {
+        console.warn('⚠️ Erro ao verificar usuário:', userError.message);
+      }
       return null;
     }
 
