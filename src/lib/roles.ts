@@ -17,13 +17,15 @@ export async function getMyRole(): Promise<PapelUsuario | null> {
 
   if (!userClinic) return null;
 
-  const { data } = await supabase
+  // perfis_usuarios usa id = auth.users.id
+  const { data: perfil } = await supabase
     .from('perfis_usuarios')
-    .select('papel')
-    .eq('user_id', userClinic.user_id)
+    .select('id')
+    .eq('id', userClinic.user_id)
     .maybeSingle();
 
-  return (data?.papel as PapelUsuario) ?? null;
+  // Se desejar manter papel, considere adicionar coluna via migration e ajustar aqui
+  return perfil ? 'VISUALIZADOR' : null;
 }
 
 export async function requireSignedIn() {

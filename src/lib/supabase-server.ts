@@ -75,7 +75,7 @@ export function createClientWithRefresh() {
                 // Configurações otimizadas para cookies de sessão
                 const cookieOptions = {
                   ...options,
-                  httpOnly: false, // Permite acesso via JavaScript para refresh
+                  httpOnly: true,
                   secure: process.env.NODE_ENV === 'production',
                   sameSite: 'lax' as const,
                 };

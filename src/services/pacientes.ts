@@ -103,9 +103,11 @@ export class PacientesService {
     try {
       const { data, error } = await this.supabase
         .from('pacientes')
-        .delete()
+        .update({ ativo: false, updated_at: new Date().toISOString() })
         .eq('id', id)
-        .eq('clinica_id', clinicaId);
+        .eq('clinica_id', clinicaId)
+        .select()
+        .single();
 
       return { data, error };
     } catch (error) {

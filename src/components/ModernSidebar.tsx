@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { clsx } from 'clsx';
+import clsx from 'clsx';
 import { Button } from '@/components/ui/Button';
 import { 
   Hospital, 
@@ -21,6 +21,7 @@ import {
   FileText,
   Syringe
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   // Props removidas - sidebar sempre expandido
@@ -46,6 +47,15 @@ const ADMIN_MENU = [
 export function ModernSidebar({}: SidebarProps) {
   const isOpen = true; // Sempre expandido
   const pathname = usePathname();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } finally {
+      window.location.href = '/login';
+    }
+  };
 
   const MenuItem = ({ item, isAdmin = false }: { item: typeof MAIN_MENU[0], isAdmin?: boolean }) => {
     const isActive = pathname?.startsWith(item.href);
@@ -148,7 +158,7 @@ export function ModernSidebar({}: SidebarProps) {
 
       {/* Footer */}
       <div className="p-3 border-t border-gray-700/50">
-        <Button className={clsx(
+        <Button onClick={handleLogout} className={clsx(
           'flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-300 text-gray-300 hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-500/20 hover:text-red-400 w-full group hover:shadow-soft',
           !isOpen && 'justify-center'
         )}>
