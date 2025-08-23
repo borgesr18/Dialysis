@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const clinicaPromise = supabase
         .from('usuarios_clinicas')
         .select('clinica_id')
-        .eq('usuario_id', currentUser.id)
+        .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();

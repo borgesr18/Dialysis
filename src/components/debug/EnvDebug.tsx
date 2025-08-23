@@ -29,7 +29,7 @@ export default function EnvDebug() {
 
   const allValid = envVars.every(env => env.isValid);
 
-  if (process.env.NODE_ENV === 'production' && allValid) {
+  if (process.env.NODE_ENV === 'production') {
     return null;
   }
 

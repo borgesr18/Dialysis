@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
             ...options,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax' as const,
-            httpOnly: false, // Permite acesso via JavaScript para refresh
+            httpOnly: true
           };
 
           request.cookies.set({
@@ -93,7 +93,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Rotas públicas que não precisam de autenticação
-    const publicRoutes = ['/login', '/registro', '/error'];
+    const publicRoutes = ['/login', '/registro', '/register', '/reset-password', '/update-password', '/error'];
     const isPublicRoute = publicRoutes.some(route => 
       request.nextUrl.pathname.startsWith(route)
     );
