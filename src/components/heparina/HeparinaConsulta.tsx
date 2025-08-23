@@ -24,9 +24,8 @@ interface PacienteComDose extends Paciente {
   sessao_atual?: SessaoHemodialise;
   acesso_vascular?: AcessoVascular;
   cidade?: string;
-  maquina_numero?: number;
+  maquina_numero?: number | string;
   nome?: string;
-  registro?: string;
 }
 
 const TURNOS = [
@@ -69,35 +68,30 @@ export default function HeparinaConsulta() {
             id,
             dose_heparina,
             dose_cateter,
-            data_prescricao,
             data_aplicacao,
-            observacoes,
-            status
+            observacoes
           ),
           sessoes_hemodialise(
             id,
-            turno,
             data_sessao,
-            maquina_id,
-            status
+            maquina_id
           ),
           acessos_vasculares(
             id,
             tipo,
             localizacao,
-            data_implante,
-            status
+            data_implante
           )
         `)
         .eq('ativo', true)
-        .order('nome');
+        .order('nome_completo');
 
       if (pacientesError) throw pacientesError;
 
       // Buscar informações das máquinas para obter números
       const { data: maquinasData } = await supabase
         .from('maquinas')
-        .select('id, numero, sala_id, salas(nome)');
+        .select('id, identificador, sala_id');
 
       // Processar dados dos pacientes
       const pacientesProcessados = pacientesData?.map((paciente: any) => {
@@ -109,8 +103,9 @@ export default function HeparinaConsulta() {
           dose_heparina: paciente.doses_heparina?.[0],
           sessao_atual: sessaoAtual,
           acesso_vascular: paciente.acessos_vasculares?.[0],
-          cidade: paciente.cidade || '',
-          maquina_numero: maquina?.numero
+          nome: paciente.nome_completo,
+          cidade: paciente.cidade_nome || paciente.cidade || '',
+          maquina_numero: maquina?.identificador
         };
       }) || [];
 

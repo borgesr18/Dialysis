@@ -21,9 +21,8 @@ interface PacienteComDose extends Paciente {
   sessao_atual?: SessaoHemodialise;
   acesso_vascular?: AcessoVascular;
   cidade?: string;
-  maquina_numero?: number;
+  maquina_numero?: number | string;
   nome?: string;
-  registro?: string;
 }
 
 interface Props {

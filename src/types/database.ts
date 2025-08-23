@@ -20,7 +20,10 @@ export interface Database {
         Row: {
           id: string;
           clinica_id: string;
+          registro: string;
           nome_completo: string;
+          alerta_texto?: string | null;
+          cidade_nome?: string | null;
           cpf?: string;
           rg?: string;
           data_nascimento?: string;
@@ -180,10 +183,9 @@ export interface Database {
         Row: {
           id: string;
           paciente_id: string;
-          nome: string;
-          tipo: string;
-          url: string;
-          tamanho?: number;
+          clinica_id: string;
+          storage_path: string;
+          tipo: string | null;
           created_at: string;
           updated_at: string;
         };
