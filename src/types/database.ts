@@ -10,6 +10,9 @@ export interface Database {
           endereco?: string;
           telefone?: string;
           uf?: string;
+          fuso_horario?: string;
+          observacoes?: string;
+          ativa?: boolean;
           created_at: string;
           updated_at: string;
         };
