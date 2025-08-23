@@ -125,8 +125,9 @@ export function FiltrosAgenda({
 
   // Filtrar máquinas baseado na busca
   const maquinasFiltradas = maquinas.filter(maquina =>
-    maquina.numero?.toString().includes(buscarMaquina) ||
-    maquina.modelo?.toLowerCase().includes(buscarMaquina.toLowerCase())
+    maquina.identificador?.toString().toLowerCase().includes(buscarMaquina.toLowerCase()) ||
+    maquina.modelo?.toLowerCase().includes(buscarMaquina.toLowerCase()) ||
+    maquina.marca?.toLowerCase().includes(buscarMaquina.toLowerCase())
   );
 
   const pacienteOptions = pacientesFiltrados.map(paciente => ({
@@ -136,7 +137,7 @@ export function FiltrosAgenda({
 
   const maquinaOptions = maquinasFiltradas.map(maquina => ({
     value: maquina.id,
-    label: `Máquina ${maquina.numero} - ${maquina.modelo}`
+    label: `Máquina ${maquina.identificador} - ${maquina.modelo ?? ''}`.trim()
   }));
 
   const turnoOptions = turnos.map(turno => ({
@@ -253,7 +254,7 @@ export function FiltrosAgenda({
             </label>
             <div className="space-y-2">
               <Input
-                placeholder="Buscar máquina por número ou modelo..."
+                placeholder="Buscar máquina por número, modelo ou marca..."
                 value={buscarMaquina}
                 onChange={(e) => setBuscarMaquina(e.target.value)}
               />

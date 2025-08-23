@@ -263,7 +263,7 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
     .filter(m => m.status === 'ativa')
     .map(m => ({
       value: m.id,
-      label: `${m.numero} - ${m.modelo}`
+      label: `${m.identificador} - ${m.modelo ?? ''}`.trim()
     }));
 
   const turnoOptions = turnos.map(t => ({

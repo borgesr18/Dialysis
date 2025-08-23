@@ -2,46 +2,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
+import { updateMaquina } from '../../_actions';
 
 export const dynamic = 'force-dynamic';
-
-async function updateMaquina(id: string, fd: FormData) {
-  'use server';
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
-
-  const sala_id = String(fd.get('sala_id') || '');
-  const identificador = String(fd.get('identificador') || '').trim();
-  const marca = String(fd.get('marca') || '').trim();
-  const modelo = String(fd.get('modelo') || '').trim();
-  const numero_serie = String(fd.get('numero_serie') || '').trim();
-  const ativa = String(fd.get('ativa') || 'true') === 'true';
-
-  if (!identificador) {
-    redirect('/maquinas?error=' + encodeURIComponent('Identificador é obrigatório.'));
-  }
-
-  const payload: any = {
-    sala_id,
-    identificador,
-    ativa,
-  };
-  if (marca) payload.marca = marca;
-  if (modelo) payload.modelo = modelo;
-  if (numero_serie) payload.numero_serie = numero_serie;
-
-  const { error } = await supabase
-    .from('maquinas')
-    .update(payload)
-    .eq('id', id)
-    .eq('clinica_id', clinica_id)
-    .single();
-
-  const ok = !error ? 'Máquina atualizada com sucesso' : '';
-  const err = error ? encodeURIComponent(error.message) : '';
-  const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
-  redirect(`/maquinas${params}`);
-}
 
 export default async function EditarMaquinaPage({ params }: { params: { id: string } }) {
   const supabase = createClient();

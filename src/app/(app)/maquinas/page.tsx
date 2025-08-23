@@ -8,30 +8,10 @@ import { ToastContainer } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Settings, Filter, Edit, Trash2, Plus, Activity } from 'lucide-react';
 import { Maquina } from '@/types/database';
+import { deleteMaquina } from './_actions';
 
 export const dynamic = 'force-dynamic';
 
-
-async function deleteMaquinaAction(id: string) {
-  'use server';
-  const clinica_id = await getCurrentClinicId();
-  
-  if (!clinica_id) {
-    redirect('/login');
-  }
-  
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('maquinas')
-    .update({ ativa: false })
-    .eq('id', id)
-    .eq('clinica_id', clinica_id);
-    
-  const ok = !error ? 'Máquina desativada com sucesso' : '';
-  const err = error ? encodeURIComponent(error.message) : '';
-  const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
-  redirect(`/maquinas${params}`);
-}
 
 type SearchParams = { ok?: string; error?: string };
 
@@ -190,7 +170,7 @@ export default async function MaquinasPage({ searchParams }: { searchParams?: Se
                         >
                           <Edit className="h-4 w-4" />
                         </LinkButton>
-                        <form action={deleteMaquinaAction.bind(null, maquina.id)} className="inline">
+                        <form action={deleteMaquina.bind(null, maquina.id)} className="inline">
                           <Button 
                             type="submit"
                             variant="outline" 

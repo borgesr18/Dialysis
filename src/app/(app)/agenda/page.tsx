@@ -191,8 +191,9 @@ export default function AgendaPage() {
         const busca = filtros.buscarTexto.toLowerCase();
         agendamentosFiltrados = agendamentosFiltrados.filter(a => 
           a.pacientes?.nome_completo.toLowerCase().includes(busca) ||
-          a.maquinas?.numero?.toString().includes(busca) ||
+          a.maquinas?.identificador?.toString().toLowerCase().includes(busca) ||
           a.maquinas?.modelo?.toLowerCase().includes(busca) ||
+          a.maquinas?.marca?.toLowerCase().includes(busca) ||
           a.observacoes?.toLowerCase().includes(busca)
         );
       }
@@ -369,13 +370,13 @@ export default function AgendaPage() {
   // Converter agendamentos para eventos do calendário
   const eventos: EventoCalendario[] = agendamentos.map(agendamento => ({
     id: agendamento.id,
-    title: `${agendamento.pacientes?.nome_completo} - Máq. ${agendamento.maquinas?.numero}`,
+    title: `${agendamento.pacientes?.nome_completo} - Máq. ${agendamento.maquinas?.identificador}`,
     start: new Date(`${agendamento.data_agendamento}T${agendamento.hora_inicio}`),
     end: new Date(`${agendamento.data_agendamento}T${agendamento.hora_fim}`),
     resource: {
       agendamento,
       paciente: agendamento.pacientes?.nome_completo || '',
-      maquina: `${agendamento.maquinas?.numero} - ${agendamento.maquinas?.modelo}` || '',
+      maquina: `${agendamento.maquinas?.identificador} - ${agendamento.maquinas?.modelo ?? ''}`.trim(),
       status: agendamento.status
     }
   }));

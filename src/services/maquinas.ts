@@ -55,7 +55,7 @@ export class MaquinasService {
         .from('maquinas')
         .select('*')
         .eq('clinica_id', clinicaId)
-        .or(`identificador.ilike.%${termo}%,modelo.ilike.%${termo}%,fabricante.ilike.%${termo}%`)
+        .or(`identificador.ilike.%${termo}%,modelo.ilike.%${termo}%,marca.ilike.%${termo}%`)
         .order('identificador', { ascending: true });
 
       return { data, error };
@@ -230,7 +230,7 @@ export class MaquinasService {
       }
 
       if (search) {
-        query = query.or(`identificador.ilike.%${search}%,modelo.ilike.%${search}%,fabricante.ilike.%${search}%`);
+        query = query.or(`identificador.ilike.%${search}%,modelo.ilike.%${search}%,marca.ilike.%${search}%`);
       }
 
       const { data, count, error } = await query
