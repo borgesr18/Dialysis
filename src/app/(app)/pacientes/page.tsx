@@ -23,7 +23,7 @@ interface Paciente {
   clinica_id: string;
 }
 
-export default async function PacientesPage() {
+export default async function PacientesPage({ searchParams }: { searchParams?: { ok?: string; error?: string } }) {
   const supabase = createClient();
   const clinicId = await getCurrentClinicId();
   
@@ -80,6 +80,12 @@ export default async function PacientesPage() {
           </Button>
         </Link>
       </div>
+
+      {(searchParams?.ok || searchParams?.error) && (
+        <div className={`mb-4 rounded-lg border px-3 py-2 text-sm ${searchParams?.ok ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+          {searchParams.ok || searchParams.error}
+        </div>
+      )}
 
       {pacientes.length === 0 ? (
         <div className="text-center py-12">
