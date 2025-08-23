@@ -6,12 +6,7 @@ const nextConfig = {
   // Configurar para renderização dinâmica
   experimental: {
     serverActions: {
-      allowedOrigins: [
-        'localhost:3000',
-        '127.0.0.1:3000',
-        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
-        process.env.APP_URL || '',
-      ].filter(Boolean),
+      // Remove allowedOrigins to default to same-origin submissions
     },
   },
   // Configurações para evitar problemas de export
