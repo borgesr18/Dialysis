@@ -102,12 +102,12 @@ export default async function PacientesPage({ searchParams }: { searchParams?: {
            {pacientes.map((paciente) => (
              <div key={paciente.id} className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
                <div className="flex items-center justify-between">
-                 <div className="flex items-center space-x-4">
+                 <Link href={`/pacientes/${paciente.id}`} className="flex items-center space-x-4 group">
                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
                      {paciente.nome_completo.charAt(0).toUpperCase()}
                    </div>
                    <div>
-                     <h3 className="text-lg font-semibold text-gray-900">
+                     <h3 className="text-lg font-semibold text-gray-900 group-hover:underline">
                        {paciente.nome_completo}
                      </h3>
                      <div className="flex items-center space-x-4 text-sm text-gray-500">
@@ -123,7 +123,7 @@ export default async function PacientesPage({ searchParams }: { searchParams?: {
                        </div>
                      )}
                    </div>
-                 </div>
+                 </Link>
                  <div className="flex items-center space-x-2">
                    <Link href={`/pacientes/${paciente.id}/edit`}>
                      <Button variant="outline" size="sm">
