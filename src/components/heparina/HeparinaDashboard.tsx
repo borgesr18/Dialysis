@@ -91,15 +91,19 @@ export default function HeparinaDashboard() {
       const { data: sessoes, error: sessoesError } = await supabase
         .from('sessoes_hemodialise')
         .select(`
-          turno,
+          turno_id,
           paciente_id,
-          pacientes(
+          turnos(
             id,
             nome
+          ),
+          pacientes(
+            id,
+            nome_completo
           )
         `)
-        .eq('data_sessao', hoje)
-        .eq('status', 'agendada');
+        .eq('data_agendamento', hoje)
+        .in('status', ['agendado', 'confirmado', 'em_andamento']);
 
       if (sessoesError) {
         console.error('❌ Erro ao buscar sessões:', sessoesError);
@@ -119,23 +123,33 @@ export default function HeparinaDashboard() {
 
       const { data: doses, error: dosesError } = await supabase
         .from('doses_heparina')
-        .select('*')
-        .in('paciente_id', pacienteIds)
-        .eq('status', 'ativa');
+        .select('id, paciente_id, dose_heparina, data_prescricao')
+        .in('paciente_id', pacienteIds);
 
       if (dosesError) {
         console.error('❌ Erro ao buscar doses:', dosesError);
         throw dosesError;
       }
 
-      console.log(`💉 Encontradas ${doses?.length || 0} doses ativas`);
+      console.log(`💉 Encontradas ${doses?.length || 0} doses`);
+
+      // Obter última dose por paciente (mais recente por data_prescricao)
+      const ultimaDosePorPaciente = new Map<string, any>();
+      (doses || []).forEach((d: any) => {
+        const atual = ultimaDosePorPaciente.get(d.paciente_id);
+        if (!atual || new Date(d.data_prescricao) > new Date(atual.data_prescricao)) {
+          ultimaDosePorPaciente.set(d.paciente_id, d);
+        }
+      });
+
+      const doseIds = Array.from(ultimaDosePorPaciente.values()).map((d: any) => d.id);
 
       // Buscar alertas ativos
       const { data: alertas, error: alertasError } = await supabase
         .from('alertas_heparina')
-        .select('*')
-        .in('dose_id', doses?.map(d => d.id) || [])
-        .eq('resolvido', false);
+        .select('id, dose_heparina_id, ativo')
+        .in('dose_heparina_id', doseIds.length > 0 ? doseIds : ['00000000-0000-0000-0000-000000000000'])
+        .eq('ativo', true);
 
       if (alertasError) {
         console.error('❌ Erro ao buscar alertas:', alertasError);
@@ -144,23 +158,29 @@ export default function HeparinaDashboard() {
 
       console.log(`🚨 Encontrados ${alertas?.length || 0} alertas ativos`);
 
-      // Processar estatísticas por turno
-      const turnos = ['manha', 'tarde', 'noite'];
-      const estatisticas: EstatisticasTurno[] = turnos.map(turno => {
-        const sessoesTurno = sessoes?.filter((s: any) => s.turno === turno) || [];
+      // Processar estatísticas por turno (com base no nome do turno)
+      const gruposPorTurno = new Map<string, any[]>();
+      (sessoes || []).forEach((s: any) => {
+        const nomeTurno = (s.turnos?.nome || 'Indefinido').toLowerCase();
+        if (!gruposPorTurno.has(nomeTurno)) gruposPorTurno.set(nomeTurno, []);
+        gruposPorTurno.get(nomeTurno)!.push(s);
+      });
+
+      const estatisticas: EstatisticasTurno[] = Array.from(gruposPorTurno.entries()).map(([turnoNome, sessoesTurno]) => {
         const pacientesTurno = sessoesTurno.map((s: any) => s.paciente_id);
-        const dosesTurno = doses?.filter(d => pacientesTurno.includes(d.paciente_id)) || [];
-        const alertasTurno = alertas?.filter(a => dosesTurno.some(d => d.id === a.dose_id)) || [];
+        const pacientesComDose = pacientesTurno.filter((pid: string) => ultimaDosePorPaciente.has(pid));
+        const dosesTurno = pacientesComDose.map((pid: string) => ultimaDosePorPaciente.get(pid));
+        const alertasTurno = (alertas || []).filter(a => dosesTurno.some((d: any) => d.id === a.dose_heparina_id));
         
         const doseMedia = dosesTurno.length > 0 
-          ? dosesTurno.reduce((acc, d) => acc + (d.dose_heparina || 0), 0) / dosesTurno.length 
+          ? dosesTurno.reduce((acc: number, d: any) => acc + (d.dose_heparina || 0), 0) / dosesTurno.length 
           : 0;
 
         return {
-          turno,
+          turno: turnoNome,
           totalPacientes: sessoesTurno.length,
-          comDose: dosesTurno.length,
-          semDose: sessoesTurno.length - dosesTurno.length,
+          comDose: pacientesComDose.length,
+          semDose: sessoesTurno.length - pacientesComDose.length,
           alertas: alertasTurno.length,
           doseMedia: Math.round(doseMedia)
         };
@@ -190,7 +210,7 @@ export default function HeparinaDashboard() {
             )
           )
         `)
-        .eq('resolvido', false)
+        .eq('ativo', true)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -218,11 +238,10 @@ export default function HeparinaDashboard() {
 
       if (pacientesError) throw pacientesError;
 
-      // Buscar doses ativas
+      // Buscar doses
       const { data: doses, error: dosesError } = await supabase
         .from('doses_heparina')
-        .select('dose_heparina')
-        .eq('status', 'ativa');
+        .select('paciente_id, dose_heparina');
 
       if (dosesError) throw dosesError;
 
@@ -235,11 +254,12 @@ export default function HeparinaDashboard() {
       if (alertasError) throw alertasError;
 
       const totalPacientes = pacientes?.length || 0;
-      const totalComDose = doses?.length || 0;
-      const totalSemDose = totalPacientes - totalComDose;
+      const pacientesComDoseSet = new Set((doses || []).map((d: any) => d.paciente_id));
+      const totalComDose = pacientesComDoseSet.size;
+      const totalSemDose = Math.max(0, totalPacientes - totalComDose);
       const totalAlertas = alertas?.length || 0;
       const doseMediaGeral = doses && doses.length > 0 
-        ? Math.round(doses.reduce((acc, d) => acc + (d.dose_heparina || 0), 0) / doses.length)
+        ? Math.round((doses as any[]).reduce((acc, d) => acc + (d.dose_heparina || 0), 0) / doses.length)
         : 0;
 
       const estatisticas = {
