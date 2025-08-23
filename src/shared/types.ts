@@ -30,8 +30,6 @@ export interface Paciente extends PacienteDB {
 }
 
 export interface Maquina extends MaquinaDB {
-  numero?: string;
-  fabricante?: string;
   status?: StatusMaquina;
 }
 

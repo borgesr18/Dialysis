@@ -51,7 +51,7 @@ export interface Database {
           identificador: string;
           marca?: string;
           modelo?: string;
-          serie?: string;
+          numero_serie?: string;
           ativa?: boolean;
           created_at: string;
           updated_at: string;

@@ -354,7 +354,7 @@ const EditarAgendamento: React.FC<EditarAgendamentoProps> = ({
     .filter(m => m.status === 'ativa')
     .map(m => ({
       value: m.id,
-      label: `${m.numero} - ${m.modelo}`
+      label: `${m.identificador} - ${m.modelo ?? ''}`.trim()
     }));
 
   const turnoOptions = turnos.map(t => ({
@@ -428,7 +428,7 @@ const EditarAgendamento: React.FC<EditarAgendamentoProps> = ({
                     Máquina
                   </Label>
                   <p className="text-lg font-medium">
-                    {maquina ? `${maquina.numero} - ${maquina.modelo}` : 'N/A'}
+                    {maquina ? `${maquina.identificador} - ${maquina.modelo ?? ''}`.trim() : 'N/A'}
                   </p>
                 </div>
               </div>
