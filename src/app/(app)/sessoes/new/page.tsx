@@ -4,12 +4,38 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
-import { Select } from '@/components/ui/Select';
+
 import { Textarea } from '@/components/ui/Textarea';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase-server';
+import { getCurrentClinicId } from '@/lib/get-clinic';
+import { redirect } from 'next/navigation';
+import { createSessao } from '../_actions';
 
-export default function NovaSessaoPage() {
+export default async function NovaSessaoPage() {
+  const supabase = createClient();
+  const clinica_id = await getCurrentClinicId();
+
+  if (!clinica_id) {
+    redirect('/dashboard?error=' + encodeURIComponent('Clínica não encontrada'));
+  }
+
+  const [{ data: pacientes }, { data: maquinas }] = await Promise.all([
+    supabase
+      .from('pacientes')
+      .select('id, nome_completo, registro')
+      .eq('clinica_id', clinica_id)
+      .eq('ativo', true)
+      .order('nome_completo'),
+    supabase
+      .from('maquinas')
+      .select('id, identificador')
+      .eq('clinica_id', clinica_id)
+      .eq('ativa', true)
+      .order('identificador'),
+  ]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -29,37 +55,48 @@ export default function NovaSessaoPage() {
       {/* Form */}
       <Card>
         <div className="p-6">
-          <form className="space-y-6">
+          <form action={createSessao} className="space-y-6">
             {/* Informações Básicas */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="paciente">Paciente *</Label>
-                <Select
-                  placeholder="Selecione um paciente"
-                  options={[
-                    { value: "1", label: "João Silva - 001" },
-                    { value: "2", label: "Maria Santos - 002" },
-                    { value: "3", label: "Pedro Oliveira - 003" }
-                  ]}
-                />
+                <Label htmlFor="paciente_id">Paciente *</Label>
+                <select
+                  id="paciente_id"
+                  name="paciente_id"
+                  required
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+                >
+                  <option value="">Selecione um paciente</option>
+                  {pacientes?.map((p: any) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome_completo} {p.registro ? `- ${p.registro}` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="maquina">Máquina *</Label>
-                <Select
-                  placeholder="Selecione uma máquina"
-                  options={[
-                    { value: "1", label: "Máquina 01 - Sala A" },
-                    { value: "2", label: "Máquina 02 - Sala A" },
-                    { value: "3", label: "Máquina 03 - Sala B" }
-                  ]}
-                />
+                <Label htmlFor="maquina_id">Máquina *</Label>
+                <select
+                  id="maquina_id"
+                  name="maquina_id"
+                  required
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+                >
+                  <option value="">Selecione uma máquina</option>
+                  {maquinas?.map((m: any) => (
+                    <option key={m.id} value={m.id}>
+                      {m.identificador}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="data_sessao">Data da Sessão *</Label>
                 <Input
                   id="data_sessao"
+                  name="data_sessao"
                   type="date"
                   required
                   defaultValue={new Date().toISOString().split('T')[0]}
@@ -70,6 +107,7 @@ export default function NovaSessaoPage() {
                 <Label htmlFor="hora_inicio">Hora de Início *</Label>
                 <Input
                   id="hora_inicio"
+                  name="hora_inicio"
                   type="time"
                   required
                   defaultValue="07:00"
@@ -85,6 +123,7 @@ export default function NovaSessaoPage() {
                   <Label htmlFor="peso_pre">Peso Pré (kg)</Label>
                   <Input
                     id="peso_pre"
+                    name="peso_pre"
                     type="number"
                     step="0.1"
                     placeholder="Ex: 70.5"
@@ -92,9 +131,10 @@ export default function NovaSessaoPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="pressao_pre">Pressão Arterial Pré</Label>
+                  <Label htmlFor="pressao_arterial_pre">Pressão Arterial Pré</Label>
                   <Input
-                    id="pressao_pre"
+                    id="pressao_arterial_pre"
+                    name="pressao_arterial_pre"
                     type="text"
                     placeholder="Ex: 120/80"
                   />
@@ -104,6 +144,7 @@ export default function NovaSessaoPage() {
                   <Label htmlFor="ultrafiltracao_prescrita">Ultrafiltração Prescrita (ml)</Label>
                   <Input
                     id="ultrafiltracao_prescrita"
+                    name="ultrafiltracao_prescrita"
                     type="number"
                     placeholder="Ex: 2000"
                   />
@@ -117,6 +158,7 @@ export default function NovaSessaoPage() {
                 <Label htmlFor="observacoes">Observações</Label>
                 <Textarea
                   id="observacoes"
+                  name="observacoes"
                   rows={4}
                   placeholder="Observações sobre a sessão, condições do paciente, etc."
                 />
