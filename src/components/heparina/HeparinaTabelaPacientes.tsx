@@ -76,7 +76,11 @@ export default function HeparinaTabelaPacientes({ pacientes, onDoseUpdate }: Pro
       
       // Validar limites de dose
       const tipoAcesso = paciente.acesso_vascular?.tipo as keyof typeof LIMITES_DOSE;
-      if (tipoAcesso && LIMITES_DOSE[tipoAcesso]) {
+      if (!tipoAcesso) {
+        toast.error('Tipo de acesso do paciente não encontrado. Cadastre o acesso vascular.');
+        return;
+      }
+      if (LIMITES_DOSE[tipoAcesso]) {
         const limites = LIMITES_DOSE[tipoAcesso];
         if (doseHeparina < limites.min || doseHeparina > limites.max) {
           toast.error(`Dose fora dos limites para ${tipoAcesso}: ${limites.min} - ${limites.max} UI`);
@@ -84,16 +88,18 @@ export default function HeparinaTabelaPacientes({ pacientes, onDoseUpdate }: Pro
         }
       }
 
+      const user = (await supabase.auth.getUser()).data.user;
+
       const dadosDose = {
         paciente_id: paciente.id,
         dose_heparina: doseHeparina,
         dose_cateter: doseCateter,
         observacoes: editando.observacoes,
         data_prescricao: new Date().toISOString(),
-        prescrito_por: (await supabase.auth.getUser()).data.user?.id,
+        tipo_acesso: tipoAcesso as any,
+        prescrito_por: user?.id as string,
         clinica_id: paciente.clinica_id,
-        status: 'prescrita'
-      };
+      } as any;
 
       if (paciente.dose_heparina?.id) {
         // Atualizar dose existente
@@ -107,7 +113,7 @@ export default function HeparinaTabelaPacientes({ pacientes, onDoseUpdate }: Pro
         // Criar nova dose
         const { error } = await supabase
           .from('doses_heparina')
-          .insert(dadosDose);
+          .insert(dadosDose as any);
 
         if (error) throw error;
       }
@@ -186,7 +192,7 @@ export default function HeparinaTabelaPacientes({ pacientes, onDoseUpdate }: Pro
                       {paciente.sessao_atual && (
                         <Badge variant="neutral" className="text-xs">
                           <Clock className="h-3 w-3 mr-1" />
-                          {formatarTurno('manha')}
+                          {paciente.sessao_atual?.turno ? formatarTurno(paciente.sessao_atual.turno as string) : ''}
                         </Badge>
                       )}
                       {paciente.acesso_vascular?.tipo && (
