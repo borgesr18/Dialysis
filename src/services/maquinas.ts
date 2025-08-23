@@ -101,8 +101,7 @@ export class MaquinasService {
       const { data, error } = await this.supabase
         .from('maquinas')
         .update({
-          ...maquina,
-          updated_at: new Date().toISOString()
+          ...maquina
         })
         .eq('id', id)
         .eq('clinica_id', clinicaId)
@@ -121,8 +120,7 @@ export class MaquinasService {
       const { data, error } = await this.supabase
         .from('maquinas')
         .update({
-          ativa,
-          updated_at: new Date().toISOString()
+          ativa
         })
         .eq('id', id)
         .eq('clinica_id', clinicaId)
