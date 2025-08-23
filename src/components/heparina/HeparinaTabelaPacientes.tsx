@@ -189,10 +189,10 @@ export default function HeparinaTabelaPacientes({ pacientes, onDoseUpdate }: Pro
                           {paciente.cidade}
                         </Badge>
                       )}
-                      {paciente.sessao_atual && (
+                      {paciente.sessao_atual?.data_sessao && (
                         <Badge variant="neutral" className="text-xs">
                           <Clock className="h-3 w-3 mr-1" />
-                          {paciente.sessao_atual?.turno ? formatarTurno(paciente.sessao_atual.turno as string) : ''}
+                          {new Date(paciente.sessao_atual.data_sessao).toLocaleDateString('pt-BR')}
                         </Badge>
                       )}
                       {paciente.acesso_vascular?.tipo && (
