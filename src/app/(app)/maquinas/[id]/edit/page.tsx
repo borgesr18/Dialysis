@@ -3,10 +3,11 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import { updateMaquina } from '../../_actions';
+import { ToastContainer } from '@/components/ui/Toast';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EditarMaquinaPage({ params }: { params: { id: string } }) {
+export default async function EditarMaquinaPage({ params, searchParams }: { params: { id: string }; searchParams?: { ok?: string; error?: string } }) {
   const supabase = createClient();
   const clinica_id = await getCurrentClinicId();
 
@@ -41,6 +42,10 @@ export default async function EditarMaquinaPage({ params }: { params: { id: stri
 
   return (
     <div className="p-6 space-y-6">
+      <ToastContainer 
+        successMessage={searchParams?.ok ? decodeURIComponent(searchParams.ok) : undefined}
+        errorMessage={searchParams?.error ? decodeURIComponent(searchParams.error) : undefined}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Editar Máquina</h1>
         <Link
