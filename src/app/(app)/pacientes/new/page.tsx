@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 
 export const dynamic = 'force-dynamic';
 
-export default function NewPacientePage() {
+export default function NewPacientePage({ searchParams }: { searchParams?: { error?: string } }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -18,6 +18,12 @@ export default function NewPacientePage() {
           Adicione um novo paciente ao sistema
         </p>
       </div>
+
+      {searchParams?.error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {searchParams.error}
+        </div>
+      )}
 
       {/* Form */}
       <Card className="p-6">

@@ -27,8 +27,10 @@ type Documento = {
 
 export default async function PacienteDetalhePage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { ok?: string; error?: string };
 }) {
   const supabase = createClient();
   const clinicaId = await getCurrentClinicId();
@@ -62,6 +64,11 @@ export default async function PacienteDetalhePage({
 
   return (
     <div className="space-y-6">
+      {searchParams?.ok && (
+        <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+          {searchParams.ok}
+        </div>
+      )}
       {/* Header + ações */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">Paciente {pac.nome_completo}</h1>
@@ -89,8 +96,6 @@ export default async function PacienteDetalhePage({
               <div className="text-sm text-neutral-600">Registro (REG)</div>
               <div className="mt-1 text-xl font-semibold">{pac.registro}</div>
             </div>
-
-
 
             <div>
               <div className="text-sm text-neutral-600">Status</div>
