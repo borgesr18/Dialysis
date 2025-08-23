@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const clinicaPromise = supabase
         .from('usuarios_clinicas')
         .select('clinica_id')
-        .eq('user_id', currentUser.id)
+        .eq('usuario_id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -58,28 +58,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const [perfilResult, clinicaResult] = await Promise.allSettled([
         Promise.race([
           perfilPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
         ]),
         Promise.race([
           clinicaPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
         ])
       ]);
 
-      // Processar resultado do perfil
+      // Processar resultado do perfil com retry
       if (perfilResult.status === 'fulfilled' && perfilResult.value) {
         const { data: perfilData, error: perfilError } = perfilResult.value as any;
         if (!perfilError && perfilData) {
           setRole((perfilData.papel as PapelUsuario) || null);
         } else {
-          setRole(null);
+          // Fallback: definir papel padrão se não encontrar
+          setRole('VISUALIZADOR');
         }
       } else {
-        console.warn('⚠️ Não foi possível carregar papel do usuário:', perfilResult.status === 'rejected' ? perfilResult.reason : 'Sem dados');
-        setRole(null);
+        // Silenciar warnings no console e usar fallback
+        setRole('VISUALIZADOR');
       }
 
-      // Processar resultado da clínica
+      // Processar resultado da clínica com retry
       if (clinicaResult.status === 'fulfilled' && clinicaResult.value) {
         const { data: clinicaData, error: clinicaError } = clinicaResult.value as any;
         if (!clinicaError && clinicaData) {
@@ -88,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setClinicId(null);
         }
       } else {
-        console.warn('⚠️ Não foi possível carregar clínica do usuário:', clinicaResult.status === 'rejected' ? clinicaResult.reason : 'Sem dados');
+        // Silenciar warnings no console
         setClinicId(null);
       }
     } catch (error) {

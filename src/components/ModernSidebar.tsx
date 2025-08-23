@@ -23,8 +23,7 @@ import {
 } from 'lucide-react';
 
 interface SidebarProps {
-  isOpen: boolean;
-  onToggle: () => void;
+  // Props removidas - sidebar sempre expandido
 }
 
 const MAIN_MENU = [
@@ -44,7 +43,8 @@ const ADMIN_MENU = [
   { href: '/admin/config', label: 'Configuração', icon: Cog, color: 'text-cyan-400' },
 ];
 
-export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
+export function ModernSidebar({}: SidebarProps) {
+  const isOpen = true; // Sempre expandido
   const pathname = usePathname();
 
   const MenuItem = ({ item, isAdmin = false }: { item: typeof MAIN_MENU[0], isAdmin?: boolean }) => {
@@ -108,10 +108,7 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
   };
 
   return (
-    <aside className={clsx(
-      'fixed top-0 left-0 h-full bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white z-30 transition-all duration-300 ease-in-out shadow-2xl border-r border-gray-700/50',
-      isOpen ? 'w-64' : 'w-16'
-    )}>
+    <aside className="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white z-30 shadow-2xl border-r border-gray-700/50">
       {/* Header */}
       <div className="p-6 border-b border-gray-700/50">
         <div className="flex items-center justify-between">
@@ -128,18 +125,7 @@ export function ModernSidebar({ isOpen, onToggle }: SidebarProps) {
               </div>
             )}
           </div>
-          
-          {/* Toggle Button */}
-          <Button
-            onClick={onToggle}
-            className="p-2 rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 transition-all duration-300 shadow-soft hover:shadow-glow hover:scale-110 group"
-          >
-            {isOpen ? (
-              <ChevronLeft className="w-4 h-4 text-gray-300 group-hover:text-white transition-colors duration-300" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-white transition-colors duration-300" />
-            )}
-          </Button>
+          {/* Toggle removido - sidebar sempre expandido */}
         </div>
       </div>
 
