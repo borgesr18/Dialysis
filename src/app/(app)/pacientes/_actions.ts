@@ -8,23 +8,11 @@ import { z } from 'zod';
 
 // Schema de validação para dados do paciente
 const pacienteSchema = z.object({
+  registro: z.string().min(1, 'Registro é obrigatório'),
   nome_completo: z.string().min(1, 'Nome completo é obrigatório'),
-  data_nascimento: z.string().min(1, 'Data de nascimento é obrigatória'),
-  cpf: z.string().min(1, 'CPF é obrigatório'),
-  rg: z.string().optional(),
-  telefone: z.string().optional(),
-  endereco: z.string().optional(),
-  cep: z.string().optional(),
-  estado: z.string().optional(),
-  sexo: z.enum(['M', 'F']).optional(),
-  estado_civil: z.string().optional(),
-  profissao: z.string().optional(),
-  contato_emergencia: z.string().optional(),
-  telefone_emergencia: z.string().optional(),
-  convenio: z.string().optional(),
-  numero_convenio: z.string().optional(),
-  observacoes: z.string().optional(),
+  cidade_nome: z.string().optional(),
   alerta_texto: z.string().optional(),
+  ativo: z.boolean().default(true),
 });
 
 function enc(msg: string) {
