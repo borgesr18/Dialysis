@@ -141,7 +141,6 @@ export async function updateMaquina(id: string, fd: FormData) {
     .update({
       ...dataParsed!,
       numero_serie: dataParsed!.numero_serie || null,
-      updated_at: new Date().toISOString(),
     })
     .eq('id', id)
     .eq('clinica_id', clinica_id);
@@ -183,7 +182,7 @@ export async function deleteMaquina(id: string) {
   // Aqui apenas executamos desativação (soft delete)
   const { error } = await supabase
     .from('maquinas')
-    .update({ ativa: false, updated_at: new Date().toISOString() })
+    .update({ ativa: false })
     .eq('id', id)
     .eq('clinica_id', clinica_id);
 
