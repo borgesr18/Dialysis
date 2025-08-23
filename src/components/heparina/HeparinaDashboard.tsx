@@ -91,19 +91,12 @@ export default function HeparinaDashboard() {
       const { data: sessoes, error: sessoesError } = await supabase
         .from('sessoes_hemodialise')
         .select(`
-          turno_id,
+          id,
           paciente_id,
-          turnos(
-            id,
-            nome
-          ),
-          pacientes(
-            id,
-            nome_completo
-          )
+          hora_inicio
         `)
-        .eq('data_agendamento', hoje)
-        .in('status', ['agendado', 'confirmado', 'em_andamento']);
+        .eq('data_sessao', hoje)
+        .in('status', ['AGENDADA', 'EM_ANDAMENTO', 'CONFIRMADA']);
 
       if (sessoesError) {
         console.error('❌ Erro ao buscar sessões:', sessoesError);
@@ -158,10 +151,17 @@ export default function HeparinaDashboard() {
 
       console.log(`🚨 Encontrados ${alertas?.length || 0} alertas ativos`);
 
-      // Processar estatísticas por turno (com base no nome do turno)
+      // Processar estatísticas por turno (derivado de hora_inicio)
       const gruposPorTurno = new Map<string, any[]>();
       (sessoes || []).forEach((s: any) => {
-        const nomeTurno = (s.turnos?.nome || 'Indefinido').toLowerCase();
+        const hora = (s.hora_inicio || '').slice(0, 2);
+        let nomeTurno = 'Indefinido';
+        const horaNum = Number(hora);
+        if (!Number.isNaN(horaNum)) {
+          if (horaNum >= 5 && horaNum < 12) nomeTurno = 'manha';
+          else if (horaNum >= 12 && horaNum < 18) nomeTurno = 'tarde';
+          else nomeTurno = 'noite';
+        }
         if (!gruposPorTurno.has(nomeTurno)) gruposPorTurno.set(nomeTurno, []);
         gruposPorTurno.get(nomeTurno)!.push(s);
       });
@@ -211,7 +211,7 @@ export default function HeparinaDashboard() {
           )
         `)
         .eq('ativo', true)
-        .order('created_at', { ascending: false })
+        .order('data_criacao', { ascending: false })
         .limit(10);
 
       if (error) {
