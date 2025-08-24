@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { getCurrentClinicId } from '@/lib/get-clinic';
 import { createClient } from '@/lib/supabase-server';
 import { Button } from '@/components/ui/Button';
@@ -41,30 +40,28 @@ export default async function PacientesPage({ searchParams }: { searchParams?: S
     clinicaId = await getCurrentClinicId();
     
     if (!clinicaId) {
-      redirect('/login');
-    }
-
-    const supabase = createClient();
-    const result = await supabase
-      .from('pacientes')
-      .select('*')
-      .eq('clinica_id', clinicaId)
-      .eq('ativo', true)
-      .order('nome_completo', { ascending: true });
-
-    if (result.error) {
-      console.error('Erro ao carregar pacientes:', result.error.message);
-      error = result.error;
+      // Evitar redirecionamento aqui para não criar loop com o middleware
+      console.warn('⚠️ Sem clinicaId na página de pacientes; exibindo estado de erro.');
+      error = new Error('Você precisa estar autenticado e associado a uma clínica para acessar Pacientes.');
     } else {
-      pacientes = result.data || [];
+      const supabase = createClient();
+      const result = await supabase
+        .from('pacientes')
+        .select('*')
+        .eq('clinica_id', clinicaId)
+        .eq('ativo', true)
+        .order('nome_completo', { ascending: true });
+
+      if (result.error) {
+        console.error('Erro ao carregar pacientes:', result.error.message);
+        error = result.error;
+      } else {
+        pacientes = result.data || [];
+      }
     }
   } catch (err) {
     console.error('Erro na página de pacientes:', err);
     error = err;
-    // Se houver erro de autenticação, redirecionar para login
-    if (err instanceof Error && err.message.includes('permission denied')) {
-      redirect('/login');
-    }
   }
 
   const formatDate = (dateString: string | null) => {
