@@ -35,8 +35,8 @@ export class AgendamentosService {
         .from('sessoes_hemodialise')
         .select(`
           *,
-          pacientes!inner(id, nome_completo, cpf),
-          maquinas!inner(id, numero, modelo, status),
+          pacientes!inner(id, nome_completo, registro),
+          maquinas!inner(id, identificador, modelo, ativa),
           turnos!inner(id, nome, hora_inicio, hora_fim)
         `)
         .eq('clinica_id', clinicaId);
@@ -88,8 +88,8 @@ export class AgendamentosService {
         .from('sessoes_hemodialise')
         .select(`
           *,
-          pacientes!inner(id, nome_completo, cpf),
-          maquinas!inner(id, numero, modelo, status),
+          pacientes!inner(id, nome_completo, registro),
+          maquinas!inner(id, identificador, modelo, ativa),
           turnos!inner(id, nome, hora_inicio, hora_fim)
         `)
         .eq('id', id)
@@ -135,8 +135,8 @@ export class AgendamentosService {
         })
         .select(`
           *,
-          pacientes!inner(id, nome_completo, cpf),
-          maquinas!inner(id, numero, modelo, status),
+          pacientes!inner(id, nome_completo, registro),
+          maquinas!inner(id, identificador, modelo, ativa),
           turnos!inner(id, nome, hora_inicio, hora_fim)
         `)
         .single();
@@ -185,8 +185,8 @@ export class AgendamentosService {
         .eq('clinica_id', clinicaId)
         .select(`
           *,
-          pacientes!inner(id, nome_completo, cpf),
-          maquinas!inner(id, numero, modelo, status),
+          pacientes!inner(id, nome_completo, registro),
+          maquinas!inner(id, identificador, modelo, ativa),
           turnos!inner(id, nome, hora_inicio, hora_fim)
         `)
         .single();
@@ -215,8 +215,8 @@ export class AgendamentosService {
         .eq('clinica_id', clinicaId)
         .select(`
           *,
-          pacientes!inner(id, nome_completo, cpf),
-          maquinas!inner(id, numero, modelo, status),
+          pacientes!inner(id, nome_completo, registro),
+          maquinas!inner(id, identificador, modelo, ativa),
           turnos!inner(id, nome, hora_inicio, hora_fim)
         `)
         .single();
@@ -243,8 +243,8 @@ export class AgendamentosService {
         .eq('clinica_id', clinicaId)
         .select(`
           *,
-          pacientes!inner(id, nome_completo, cpf),
-          maquinas!inner(id, numero, modelo, status),
+          pacientes!inner(id, nome_completo, registro),
+          maquinas!inner(id, identificador, modelo, ativa),
           turnos!inner(id, nome, hora_inicio, hora_fim)
         `)
         .single();
@@ -428,8 +428,8 @@ export class AgendamentosService {
         .from('sessoes_hemodialise')
         .select(`
           *,
-          pacientes!inner(id, nome_completo, cpf),
-          maquinas!inner(id, numero, modelo, status),
+          pacientes!inner(id, nome_completo, registro),
+          maquinas!inner(id, identificador, modelo, ativa),
           turnos!inner(id, nome, hora_inicio, hora_fim)
         `)
         .eq('clinica_id', clinicaId)

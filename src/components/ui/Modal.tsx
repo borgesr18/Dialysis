@@ -76,6 +76,9 @@ const Modal: React.FC<ModalProps> = ({
   
   if (!isOpen) return null;
   
+  // Ensure we're on the client side before using createPortal
+  if (typeof window === 'undefined') return null;
+  
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}

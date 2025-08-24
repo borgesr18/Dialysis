@@ -456,7 +456,7 @@ export default function HeparinaDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-500">
-                      {new Date(alerta.created_at).toLocaleDateString('pt-BR')}
+                      {alerta.data_criacao ? new Date(alerta.data_criacao).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                     <Badge variant="danger" className="text-xs">
                       {alerta.tipo_alerta}
