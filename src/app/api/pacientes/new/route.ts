@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { requireCurrentClinicId } from '@/lib/get-clinic';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 function enc(msg: string) {
 	return encodeURIComponent(msg);
 }

@@ -9,6 +9,9 @@ import {
 } from '@/middleware/heparina-validation';
 import { auditDoseHeparina } from '@/utils/heparina-audit';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient();
