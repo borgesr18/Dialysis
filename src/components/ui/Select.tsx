@@ -27,6 +27,9 @@ interface SelectProps {
   loading?: boolean;
   multiple?: boolean;
   className?: string;
+  id?: string;
+  name?: string;
+  required?: boolean;
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -44,7 +47,10 @@ const Select: React.FC<SelectProps> = ({
   disabled = false,
   loading = false,
   multiple = false,
-  className
+  className,
+  id,
+  name,
+  required
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,6 +59,7 @@ const Select: React.FC<SelectProps> = ({
   );
   const selectRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const listboxId = id ? `${id}-listbox` : undefined;
   
   const filteredOptions = searchable
     ? options.filter(option =>
@@ -151,9 +158,31 @@ const Select: React.FC<SelectProps> = ({
       )}
       
       <div ref={selectRef} className="relative">
-        <div
+        {/* Hidden input for form submissions when a name is provided */}
+        {name !== undefined && (
+          <input type="hidden" name={name} value={value ?? ''} />
+        )}
+
+        <button
+          id={id}
           className={triggerClasses}
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-controls={listboxId}
+          aria-invalid={!!error || undefined}
+          disabled={disabled || loading}
           onClick={() => !disabled && !loading && setIsOpen(!isOpen)}
+          onKeyDown={(e) => {
+            if (disabled || loading) return;
+            if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsOpen(true);
+            }
+            if (e.key === 'Escape') {
+              setIsOpen(false);
+            }
+          }}
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {selectedOption?.icon && (
@@ -199,7 +228,7 @@ const Select: React.FC<SelectProps> = ({
               }
             )} />
           </div>
-        </div>
+        </button>
         
         {isOpen && (
           <div className={clsx(
@@ -207,7 +236,10 @@ const Select: React.FC<SelectProps> = ({
             'border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl',
             'animate-in fade-in-0 zoom-in-95 duration-200',
             'max-h-60 overflow-auto'
-          )}>
+          )}
+          role="listbox"
+          id={listboxId}
+        >
             {searchable && (
               <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                 <div className="relative">
@@ -246,7 +278,17 @@ const Select: React.FC<SelectProps> = ({
                           'opacity-50 cursor-not-allowed': option.disabled,
                         }
                       )}
+                      role="option"
+                      aria-selected={isSelected}
                       onClick={() => !option.disabled && handleSelect(option.value)}
+                      onKeyDown={(e) => {
+                        if (option.disabled) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelect(option.value);
+                        }
+                      }}
+                      tabIndex={0}
                     >
                       {option.icon && (
                         <div className="flex-shrink-0">
