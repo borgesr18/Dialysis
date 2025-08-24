@@ -194,7 +194,7 @@ export default function PacienteForm({
                 onChange={(value) => setFormData(prev => ({ ...prev, sexo: value }))}
                 error={errors.sexo}
               />
-              <input type="hidden" name="sexo" value={formData.sexo} />
+              <input type="hidden" id="sexo" name="sexo" value={formData.sexo} />
             </div>
 
             {/* Telefone */}
@@ -250,7 +250,7 @@ export default function PacienteForm({
                 onChange={(value) => setFormData(prev => ({ ...prev, convenio: value }))}
                 error={errors.convenio}
               />
-              <input type="hidden" name="convenio" value={formData.convenio} />
+              <input type="hidden" id="convenio" name="convenio" value={formData.convenio} />
             </div>
 
             {/* Número do Convênio */}
