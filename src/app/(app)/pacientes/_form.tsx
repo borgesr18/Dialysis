@@ -185,6 +185,8 @@ export default function PacienteForm({
                 Sexo
               </Label>
               <Select
+                id="sexo"
+                name="sexo"
                 placeholder="Selecione o sexo"
                 options={[
                   { value: 'M', label: 'Masculino' },
@@ -194,7 +196,6 @@ export default function PacienteForm({
                 onChange={(value) => setFormData(prev => ({ ...prev, sexo: value }))}
                 error={errors.sexo}
               />
-              <input type="hidden" id="sexo" name="sexo" value={formData.sexo} />
             </div>
 
             {/* Telefone */}
@@ -237,6 +238,8 @@ export default function PacienteForm({
                 Convênio
               </Label>
               <Select
+                id="convenio"
+                name="convenio"
                 placeholder="Selecione o convênio"
                 options={[
                   { value: 'SUS', label: 'SUS' },
@@ -250,7 +253,6 @@ export default function PacienteForm({
                 onChange={(value) => setFormData(prev => ({ ...prev, convenio: value }))}
                 error={errors.convenio}
               />
-              <input type="hidden" id="convenio" name="convenio" value={formData.convenio} />
             </div>
 
             {/* Número do Convênio */}

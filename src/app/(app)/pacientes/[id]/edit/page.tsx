@@ -7,6 +7,7 @@ import PacienteForm from '../../_form';
 import { updatePaciente } from '../../_actions';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Edit } from 'lucide-react';
+import { useRequireAuth } from '@/hooks/useAuth';
 
 interface Paciente {
   id: string;
@@ -22,6 +23,7 @@ export default function EditPacientePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(true);
+  const { user, loading: authLoading } = useRequireAuth();
 
   useEffect(() => {
     async function loadPaciente() {
@@ -35,9 +37,11 @@ export default function EditPacientePage() {
           return;
         }
 
-        // Obter clinica_id do usuário autenticado (igual à lógica do servidor)
-        const { data: authData, error: authError } = await supabase.auth.getUser();
-        if (authError || !authData?.user) {
+        // Aguarda autenticação via hook para evitar falso negativo
+        if (authLoading) {
+          return;
+        }
+        if (!user) {
           setError('Usuário não autenticado');
           return;
         }
@@ -45,7 +49,7 @@ export default function EditPacientePage() {
         const { data: clinicRow, error: clinicError } = await supabase
           .from('usuarios_clinicas')
           .select('clinica_id')
-          .eq('user_id', authData.user.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -82,7 +86,7 @@ export default function EditPacientePage() {
     }
 
     loadPaciente();
-  }, [params.id]);
+  }, [params.id, authLoading, user]);
 
   async function action(formData: FormData) {
     if (!paciente) return;
