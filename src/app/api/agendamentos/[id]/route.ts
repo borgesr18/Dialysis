@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase-server';
 import { requireCurrentClinicId } from '@/lib/get-clinic';
 import { agendamentosService } from '@/services/agendamentos';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 function handleApiError(error: unknown) {
   console.error('API Error:', error);
   const message = error instanceof Error ? error.message : 'Erro interno do servidor';
