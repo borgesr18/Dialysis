@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/Label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
-import { Header } from '@/components/Header';
 import { Building2, Hash, Mail, Phone, MapPin, Globe, Clock, FileText, ArrowLeft, Settings } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 
