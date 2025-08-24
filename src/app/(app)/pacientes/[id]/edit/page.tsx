@@ -35,10 +35,31 @@ export default function EditPacientePage() {
           return;
         }
 
+        // Obter clinica_id do usuário autenticado (igual à lógica do servidor)
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData?.user) {
+          setError('Usuário não autenticado');
+          return;
+        }
+
+        const { data: clinicRow, error: clinicError } = await supabase
+          .from('usuarios_clinicas')
+          .select('clinica_id')
+          .eq('user_id', authData.user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (clinicError || !clinicRow?.clinica_id) {
+          setError('Clínica não encontrada para o usuário');
+          return;
+        }
+
         const { data: p, error: queryError } = await supabase
           .from('pacientes')
           .select('id, registro, nome_completo, alerta_texto')
           .eq('id', params.id)
+          .eq('clinica_id', clinicRow.clinica_id)
           .maybeSingle();
 
         if (queryError) {
