@@ -1,139 +1,309 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
-import { getCurrentClinicId } from '@/lib/get-clinic';
-import { Settings } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createMaquina } from '../_actions';
+import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
+import { Monitor, ArrowLeft, Building, Hash, Tag, Settings } from 'lucide-react';
+import { createClient } from '@/lib/supabase-client';
 
-export const dynamic = 'force-dynamic';
+interface Sala {
+  id: string;
+  nome: string;
+}
 
-export default async function NovaMaquinaPage() {
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
-  
-  // Verificar se clinica_id existe
-  if (!clinica_id) {
-    redirect('/dashboard?error=' + encodeURIComponent('Clínica não encontrada'));
-    return;
+export default function NewMaquinaPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [salas, setSalas] = useState<Sala[]>([]);
+  const [loadingSalas, setLoadingSalas] = useState(true);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState({
+    identificador: '',
+    modelo: '',
+    numero_serie: '',
+    sala_id: '',
+    ativa: 'true'
+  });
+  const [isModalOpen, setIsModalOpen] = useState(true);
+
+  // Carregar salas
+  useEffect(() => {
+    async function loadSalas() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('salas')
+          .select('id, nome')
+          .order('nome');
+
+        if (error) {
+          console.error('Erro ao carregar salas:', error);
+          return;
+        }
+
+        setSalas(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar salas:', error);
+      } finally {
+        setLoadingSalas(false);
+      }
+    }
+
+    loadSalas();
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      
+      // Validação básica
+      const identificador = formData.get('identificador') as string;
+      const salaId = formData.get('sala_id') as string;
+      const marca = formData.get('marca') as string;
+      const modelo = formData.get('modelo') as string;
+      const numeroSerie = formData.get('numero_serie') as string;
+      const ativa = formData.get('ativa') as string;
+      
+      const newErrors: Record<string, string> = {};
+      
+      if (!identificador?.trim()) {
+        newErrors.identificador = 'Identificador é obrigatório';
+      }
+      
+      if (!salaId) {
+        newErrors.sala_id = 'Sala é obrigatória';
+      }
+      
+      if (!marca?.trim()) {
+        newErrors.marca = 'Marca é obrigatória';
+      }
+      
+      if (!modelo?.trim()) {
+        newErrors.modelo = 'Modelo é obrigatório';
+      }
+      
+      if (!numeroSerie?.trim()) {
+        newErrors.numero_serie = 'Número de série é obrigatório';
+      }
+      
+      if (!ativa) {
+        newErrors.ativa = 'Status é obrigatório';
+      }
+      
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
+      
+      await createMaquina(formData);
+    } catch (error) {
+      console.error('Erro ao criar máquina:', error);
+      setErrors({ geral: 'Erro interno do servidor' });
+    } finally {
+      setLoading(false);
+    }
   }
-  
-  const { data: salas } = await supabase
-    .from('salas')
-    .select('id, nome')
-    .eq('clinica_id', clinica_id)
-    .order('nome');
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+    router.push('/maquinas');
+  };
+
+  const salaOptions = salas.map(sala => ({
+    value: sala.id,
+    label: sala.nome
+  }));
+
+  const formContent = (
+    <Card className="border-0 shadow-none">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Monitor className="h-5 w-5 text-primary-600" />
+          Nova Máquina
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Grid de campos principais */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Identificador */}
+            <div className="space-y-2">
+              <Label htmlFor="identificador" className="flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Identificador
+              </Label>
+              <Input
+                id="identificador"
+                name="identificador"
+                placeholder="Ex: M001"
+                error={errors.identificador}
+                required
+              />
+            </div>
+
+            {/* Sala */}
+            <div className="space-y-2">
+              <Label htmlFor="sala_id" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Sala
+              </Label>
+              <Select
+                placeholder="Selecione uma sala"
+                options={salaOptions}
+                loading={loadingSalas}
+                value={formData.sala_id}
+                onChange={(value) => setFormData(prev => ({ ...prev, sala_id: value }))}
+                error={errors.sala_id}
+              />
+              <input type="hidden" name="sala_id" value={formData.sala_id} />
+            </div>
+          </div>
+
+          {/* Grid de especificações */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Marca */}
+            <div className="space-y-2">
+              <Label htmlFor="marca" className="flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                Marca
+              </Label>
+              <Input
+                id="marca"
+                name="marca"
+                placeholder="Ex: Fresenius"
+                error={errors.marca}
+                required
+              />
+            </div>
+
+            {/* Modelo */}
+            <div className="space-y-2">
+              <Label htmlFor="modelo" className="flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                Modelo
+              </Label>
+              <Input
+                id="modelo"
+                name="modelo"
+                placeholder="Ex: 4008S"
+                error={errors.modelo}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Grid de identificação e status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Número de Série */}
+            <div className="space-y-2">
+              <Label htmlFor="numero_serie" className="flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Número de Série
+              </Label>
+              <Input
+                id="numero_serie"
+                name="numero_serie"
+                placeholder="Ex: 123456789"
+                error={errors.numero_serie}
+                required
+              />
+            </div>
+
+            {/* Status */}
+            <div className="space-y-2">
+              <Label htmlFor="ativa" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Status
+              </Label>
+              <Select
+                placeholder="Selecione o status"
+                options={[
+                  { value: 'true', label: 'Ativa' },
+                  { value: 'false', label: 'Inativa' }
+                ]}
+                value={formData.ativa}
+                onChange={(value) => setFormData(prev => ({ ...prev, ativa: value }))}
+                error={errors.ativa}
+              />
+              <input type="hidden" name="ativa" value={formData.ativa} />
+            </div>
+          </div>
+
+          {/* Erro geral */}
+          {errors.geral && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="text-red-800 text-sm font-medium">
+                {errors.geral}
+              </div>
+            </div>
+          )}
+
+          {/* Botões */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              loading={loading}
+              disabled={loading}
+            >
+              {loading ? 'Criando...' : 'Criar Máquina'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <Settings className="h-6 w-6 text-blue-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Nova Máquina</h1>
-          <p className="text-gray-600">Cadastre uma nova máquina de hemodiálise</p>
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/maquinas')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
+              </Button>
+              <div className="h-6 w-px bg-gray-300" />
+              <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <Monitor className="h-5 w-5" />
+                Nova Máquina
+              </h1>
+            </div>
+          </div>
         </div>
       </div>
 
-      <Card className="p-6">
-        <form action={createMaquina} className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Identificador *
-            </label>
-            <input
-              name="identificador"
-              required
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
-              placeholder="Ex: MAQ-001"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Sala
-            </label>
-            <select
-              name="sala_id"
-              required
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
-            >
-              <option value="">Selecione uma sala</option>
-              {salas?.map((sala: any) => (
-                <option key={sala.id} value={sala.id}>
-                  {sala.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Marca
-            </label>
-            <input
-              name="marca"
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
-              placeholder="Ex: Fresenius"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Modelo
-            </label>
-            <input
-              name="modelo"
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
-              placeholder="Ex: 4008S"
-            />
-          </div>
-
-          <div className="md:col-span-2 space-y-2">
-            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Número de Série
-            </label>
-            <input
-              name="numero_serie"
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
-              placeholder="Ex: ABC123456"
-            />
-          </div>
-
-          <div className="md:col-span-2 space-y-2">
-            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Status
-            </label>
-            <select
-              name="ativa"
-              defaultValue="true"
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
-            >
-              <option value="true">Ativa</option>
-              <option value="false">Inativa</option>
-            </select>
-          </div>
-        </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Link
-              href="/maquinas"
-              className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-            >
-              Cancelar
-            </Link>
-            <button
-              type="submit"
-              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-            >
-              Criar Máquina
-            </button>
-          </div>
-        </form>
-      </Card>
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Modal isOpen={isModalOpen} onClose={handleClose} size="xl">
+          {formContent}
+        </Modal>
+      </div>
     </div>
   );
 }

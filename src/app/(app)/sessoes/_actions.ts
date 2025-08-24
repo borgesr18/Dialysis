@@ -2,174 +2,175 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { requireCurrentClinicId } from '@/lib/get-clinic';
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
 
 function enc(msg: string) {
   return encodeURIComponent(msg);
 }
 
-function parseNumber(value: FormDataEntryValue | null): number | null {
-  if (value === null) return null;
-  const str = String(value).replace(',', '.').trim();
-  if (str === '') return null;
-  const n = Number(str);
-  return Number.isFinite(n) ? n : null;
-}
+const sessaoSchema = z.object({
+  paciente_id: z.string().min(1, 'Paciente é obrigatório'),
+  maquina_id: z.string().min(1, 'Máquina é obrigatória'),
+  data_sessao: z.string().min(1, 'Data da sessão é obrigatória'),
+  hora_inicio: z.string().min(1, 'Hora de início é obrigatória'),
+  peso_pre: z.number().optional(),
+  pressao_arterial_pre: z.string().optional(),
+  ultrafiltracao_prescrita: z.number().optional(),
+  observacoes: z.string().optional(),
+  status: z.enum(['agendada', 'em_andamento', 'concluida', 'cancelada']).default('agendada'),
+});
 
-export async function createSessao(fd: FormData) {
+export async function createSessao(formData: FormData) {
   const supabase = createClient();
-  const clinica_id = await requireCurrentClinicId();
+  
+  const validatedFields = sessaoSchema.safeParse({
+    paciente_id: formData.get('paciente_id'),
+    maquina_id: formData.get('maquina_id'),
+    data_sessao: formData.get('data_sessao'),
+    hora_inicio: formData.get('hora_inicio'),
+    peso_pre: formData.get('peso_pre') ? parseFloat(formData.get('peso_pre') as string) : undefined,
+    pressao_arterial_pre: formData.get('pressao_arterial_pre') || undefined,
+    ultrafiltracao_prescrita: formData.get('ultrafiltracao_prescrita') ? parseInt(formData.get('ultrafiltracao_prescrita') as string) : undefined,
+    observacoes: formData.get('observacoes') || undefined,
+    status: 'agendada',
+  });
 
-  const paciente_id = String(fd.get('paciente_id') ?? '').trim();
-  const maquina_id = String(fd.get('maquina_id') ?? '').trim();
-  const data_sessao = String(fd.get('data_sessao') ?? '').trim();
-  const hora_inicio = String(fd.get('hora_inicio') ?? '').trim();
-  const peso_pre = parseNumber(fd.get('peso_pre'));
-  const pressao_arterial_pre = String(fd.get('pressao_arterial_pre') ?? '').trim() || null;
-  const ultrafiltracao_prescrita = parseNumber(fd.get('ultrafiltracao_prescrita'));
-  const observacoes = String(fd.get('observacoes') ?? '').trim() || null;
-
-  if (!paciente_id || !maquina_id || !data_sessao || !hora_inicio) {
-    redirect(`/sessoes/new?error=${enc('Preencha todos os campos obrigatórios')}`);
+  if (!validatedFields.success) {
+    redirect('/sessoes/new?error=' + encodeURIComponent('Dados inválidos'));
   }
 
-  // Verificar se paciente pertence à clínica do usuário
-  const { data: paciente, error: pacienteErr } = await supabase
-    .from('pacientes')
-    .select('id')
-    .eq('id', paciente_id)
-    .eq('clinica_id', clinica_id)
-    .maybeSingle();
-
-  if (pacienteErr || !paciente) {
-    redirect(`/sessoes/new?error=${enc('Paciente inválido para a clínica atual')}`);
-  }
-
-  // Verificar se máquina pertence à clínica do usuário
-  const { data: maq, error: maqErr } = await supabase
-    .from('maquinas')
-    .select('id')
-    .eq('id', maquina_id)
-    .eq('clinica_id', clinica_id)
-    .maybeSingle();
-
-  if (maqErr || !maq) {
-    redirect(`/sessoes/new?error=${enc('Máquina inválida para a clínica atual')}`);
-  }
-
-  const insertPayload: any = {
-    paciente_id,
-    maquina_id,
-    data_sessao,
-    hora_inicio,
-    peso_pre,
-    pressao_arterial_pre,
-    observacoes,
-    status: 'AGENDADA',
-  };
-  if (ultrafiltracao_prescrita !== null) {
-    insertPayload['ultrafiltração_prescrita'] = ultrafiltracao_prescrita;
+  // Validar se a data não é no passado
+  const hoje = new Date();
+  const dataEscolhida = new Date(validatedFields.data.data_sessao);
+  hoje.setHours(0, 0, 0, 0);
+  dataEscolhida.setHours(0, 0, 0, 0);
+  
+  if (dataEscolhida < hoje) {
+    redirect('/sessoes/new?error=' + encodeURIComponent('A data da sessão não pode ser no passado'));
   }
 
   const { error } = await supabase
-    .from('sessoes_hemodialise')
-    .insert(insertPayload);
+    .from('sessoes')
+    .insert([validatedFields.data]);
 
   if (error) {
-    const msg = error.message || 'Falha ao criar sessão';
-    redirect(`/sessoes/new?error=${enc(msg)}`);
+    console.error('Erro ao criar sessão:', error);
+    redirect('/sessoes/new?error=' + encodeURIComponent(error.message));
   }
 
   revalidatePath('/sessoes');
-  redirect(`/sessoes?ok=${enc('Sessão criada com sucesso!')}`);
+  redirect('/sessoes?success=' + encodeURIComponent('Sessão agendada com sucesso'));
 }
 
-export async function updateSessao(id: string, fd: FormData) {
-  if (!id) {
-    redirect(`/sessoes?error=${enc('ID da sessão é obrigatório')}`);
-  }
+export async function updateSessao(id: string, formData: FormData) {
   const supabase = createClient();
+  
+  const validatedFields = sessaoSchema.safeParse({
+    paciente_id: formData.get('paciente_id'),
+    maquina_id: formData.get('maquina_id'),
+    data_sessao: formData.get('data_sessao'),
+    hora_inicio: formData.get('hora_inicio'),
+    peso_pre: formData.get('peso_pre') ? parseFloat(formData.get('peso_pre') as string) : undefined,
+    pressao_arterial_pre: formData.get('pressao_arterial_pre') || undefined,
+    ultrafiltracao_prescrita: formData.get('ultrafiltracao_prescrita') ? parseInt(formData.get('ultrafiltracao_prescrita') as string) : undefined,
+    observacoes: formData.get('observacoes') || undefined,
+    status: formData.get('status') as any,
+  });
 
-  const payload: any = {
-    peso_pre: parseNumber(fd.get('peso_pre')),
-    peso_pos: parseNumber(fd.get('peso_pos')),
-    pressao_arterial_pre: String(fd.get('pressao_arterial_pre') ?? '').trim() || null,
-    pressao_arterial_pos: String(fd.get('pressao_arterial_pos') ?? '').trim() || null,
-    observacoes: String(fd.get('observacoes') ?? '').trim() || null,
-  };
-
-  const ufPresc = parseNumber(fd.get('ultrafiltracao_prescrita'));
-  if (ufPresc !== null) payload['ultrafiltração_prescrita'] = ufPresc;
-  const ufReal = parseNumber(fd.get('ultrafiltracao_realizada'));
-  if (ufReal !== null) payload['ultrafiltração_realizada'] = ufReal;
+  if (!validatedFields.success) {
+    redirect(`/sessoes/${id}/edit?error=` + encodeURIComponent('Dados inválidos'));
+  }
 
   const { error } = await supabase
-    .from('sessoes_hemodialise')
-    .update(payload)
+    .from('sessoes')
+    .update(validatedFields.data)
     .eq('id', id);
 
   if (error) {
-    const msg = error.message || 'Falha ao atualizar sessão';
-    redirect(`/sessoes/${id}?error=${enc(msg)}`);
+    console.error('Erro ao atualizar sessão:', error);
+    redirect(`/sessoes/${id}/edit?error=` + encodeURIComponent(error.message));
   }
 
-  revalidatePath(`/sessoes/${id}`);
   revalidatePath('/sessoes');
-  redirect(`/sessoes/${id}?ok=${enc('Sessão atualizada com sucesso!')}`);
+  redirect('/sessoes?success=' + encodeURIComponent('Sessão atualizada com sucesso'));
+}
+
+export async function deleteSessao(id: string) {
+  const supabase = createClient();
+  
+  const { error } = await supabase
+    .from('sessoes')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao deletar sessão:', error);
+    redirect('/sessoes?error=' + encodeURIComponent(error.message));
+  }
+
+  revalidatePath('/sessoes');
+  redirect('/sessoes?success=' + encodeURIComponent('Sessão excluída com sucesso'));
 }
 
 export async function startSessao(id: string) {
-  if (!id) {
+  if (!id || typeof id !== 'string') {
     redirect(`/sessoes?error=${enc('ID da sessão é obrigatório')}`);
   }
+
   const supabase = createClient();
+  const clinica_id = await requireCurrentClinicId();
 
   const { error } = await supabase
     .from('sessoes_hemodialise')
-    .update({ status: 'EM_ANDAMENTO' })
+    .update({
+      status: 'em_andamento',
+      hora_inicio_real: new Date().toISOString()
+    })
     .eq('id', id)
-    .eq('status', 'AGENDADA');
+    .eq('clinica_id', clinica_id);
 
   if (error) {
-    const msg = error.message || 'Falha ao iniciar sessão';
-    redirect(`/sessoes/${id}?error=${enc(msg)}`);
+    console.error('❌ Erro ao iniciar sessão:', error);
+    redirect(`/sessoes/${id}?error=${enc('Falha ao iniciar sessão')}`);
   }
 
-  revalidatePath(`/sessoes/${id}`);
   revalidatePath('/sessoes');
-  redirect(`/sessoes/${id}?ok=${enc('Sessão iniciada!')}`);
+  revalidatePath(`/sessoes/${id}`);
+  redirect(`/sessoes/${id}?ok=${enc('Sessão iniciada com sucesso!')}`);
 }
 
-export async function finalizarSessao(id: string, fd?: FormData) {
-  if (!id) {
+export async function finalizarSessao(id: string, fd: FormData) {
+  if (!id || typeof id !== 'string') {
     redirect(`/sessoes?error=${enc('ID da sessão é obrigatório')}`);
   }
+
   const supabase = createClient();
+  const clinica_id = await requireCurrentClinicId();
 
-  const hora_fim = (fd && String(fd.get('hora_fim') ?? '').trim()) || null;
-  const peso_pos = fd ? parseNumber(fd.get('peso_pos')) : null;
-  const pressao_arterial_pos = fd ? (String(fd.get('pressao_arterial_pos') ?? '').trim() || null) : null;
-  const ultrafiltracao_realizada = fd ? parseNumber(fd.get('ultrafiltracao_realizada')) : null;
-
-  const payload: any = { status: 'CONCLUIDA' };
-  if (hora_fim) payload.hora_fim = hora_fim;
-  if (peso_pos !== null) payload.peso_pos = peso_pos;
-  if (pressao_arterial_pos) payload.pressao_arterial_pos = pressao_arterial_pos;
-  if (ultrafiltracao_realizada !== null) payload['ultrafiltração_realizada'] = ultrafiltracao_realizada;
+  const peso_pos = fd.get('peso_pos');
+  const pressao_arterial_pos = fd.get('pressao_arterial_pos');
+  const observacoes_finais = fd.get('observacoes_finais');
 
   const { error } = await supabase
     .from('sessoes_hemodialise')
-    .update(payload)
+    .update({
+      status: 'finalizada',
+      hora_fim_real: new Date().toISOString(),
+      peso_pos: peso_pos ? parseFloat(String(peso_pos)) : null,
+      pressao_arterial_pos: pressao_arterial_pos ? String(pressao_arterial_pos) : null,
+      observacoes_finais: observacoes_finais ? String(observacoes_finais) : null
+    })
     .eq('id', id)
-    .in('status', ['EM_ANDAMENTO', 'AGENDADA']);
+    .eq('clinica_id', clinica_id);
 
   if (error) {
-    const msg = error.message || 'Falha ao finalizar sessão';
-    redirect(`/sessoes/${id}?error=${enc(msg)}`);
+    console.error('❌ Erro ao finalizar sessão:', error);
+    redirect(`/sessoes/${id}?error=${enc('Falha ao finalizar sessão')}`);
   }
 
-  revalidatePath(`/sessoes/${id}`);
   revalidatePath('/sessoes');
-  redirect(`/sessoes/${id}?ok=${enc('Sessão finalizada!')}`);
+  revalidatePath(`/sessoes/${id}`);
+  redirect(`/sessoes/${id}?ok=${enc('Sessão finalizada com sucesso!')}`);
 }

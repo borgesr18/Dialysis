@@ -19,6 +19,12 @@ const navigation = [
     description: 'Visão geral das doses'
   },
   {
+    name: 'Lançamento',
+    href: '/heparina/lancamento',
+    icon: Syringe,
+    description: 'Lançar doses por sala'
+  },
+  {
     name: 'Consulta Rápida',
     href: '/heparina/consulta',
     icon: Search,

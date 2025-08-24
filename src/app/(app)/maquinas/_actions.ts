@@ -1,197 +1,99 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { requireCurrentClinicId } from '@/lib/get-clinic';
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 const maquinaSchema = z.object({
-  sala_id: z.string().min(1, 'Sala é obrigatória'),
   identificador: z.string().min(1, 'Identificador é obrigatório'),
-  marca: z.string().optional(),
   modelo: z.string().optional(),
   numero_serie: z.string().optional(),
-  ativa: z.boolean().default(true),
+  sala_id: z.string().min(1, 'Sala é obrigatória'),
+  status: z.enum(['ativa', 'manutencao', 'inativa']).default('ativa'),
 });
 
-function enc(msg: string) {
-  return encodeURIComponent(msg);
-}
-
-function parseMaquinaForm(fd: FormData) {
-  try {
-    const raw = {
-      sala_id: String(fd.get('sala_id') ?? '').trim(),
-      identificador: String(fd.get('identificador') ?? '').trim(),
-      marca: fd.get('marca') ? String(fd.get('marca')).trim() : undefined,
-      modelo: fd.get('modelo') ? String(fd.get('modelo')).trim() : undefined,
-      numero_serie: fd.get('numero_serie') ? String(fd.get('numero_serie')).trim() : undefined,
-      ativa: (fd.get('ativa') ?? 'true') === 'true',
-    };
-    return maquinaSchema.parse(raw);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const messages = error.errors.map(e => e.message).join(', ');
-      throw new Error(`Dados inválidos: ${messages}`);
-    }
-    throw error;
-  }
-}
-
-export async function createMaquina(fd: FormData) {
-  let dataParsed;
-  try {
-    dataParsed = parseMaquinaForm(fd);
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Erro interno do servidor';
-    redirect(`/maquinas/new?error=${enc(msg)}`);
-  }
-
+export async function createMaquina(formData: FormData) {
   const supabase = createClient();
-  const clinica_id = await requireCurrentClinicId();
+  
+  const validatedFields = maquinaSchema.safeParse({
+    identificador: formData.get('identificador'),
+    modelo: formData.get('modelo'),
+    numero_serie: formData.get('numero_serie'),
+    sala_id: formData.get('sala_id'),
+    status: formData.get('status') || 'ativa',
+  });
 
-  // Impedir duplicidade de identificador por clínica
-  const { data: exists, error: checkError } = await supabase
-    .from('maquinas')
-    .select('id')
-    .eq('clinica_id', clinica_id)
-    .eq('identificador', dataParsed!.identificador)
-    .limit(1);
-
-  if (checkError) {
-    redirect(`/maquinas/new?error=${enc('Falha ao validar identificador')}`);
-  }
-  if (exists && exists.length > 0) {
-    redirect(`/maquinas/new?error=${enc('Já existe uma máquina com este identificador nesta clínica')}`);
-  }
-
-  const { data, error } = await supabase
-    .from('maquinas')
-    .insert({
-      clinica_id,
-      ...dataParsed!,
-      numero_serie: dataParsed!.numero_serie || null,
-    })
-    .select('id')
-    .single();
-
-  if (error) {
-    let msg = 'Falha ao criar máquina';
-    if (error.code === '23505') msg = 'Identificador já existe nesta clínica';
-    else if (error.code === '23503') msg = 'Dados de referência inválidos';
-    else if (error.message) msg = `Erro: ${error.message}`;
-    redirect(`/maquinas/new?error=${enc(msg)}`);
-  }
-
-  if (!data?.id) {
-    redirect(`/maquinas/new?error=${enc('Falha ao criar máquina: ID não retornado')}`);
-  }
-
-  revalidatePath('/maquinas');
-  redirect(`/maquinas?ok=${enc('Máquina criada com sucesso!')}`);
-}
-
-export async function updateMaquina(id: string, fd: FormData) {
-  if (!id) {
-    redirect(`/maquinas?error=${enc('ID da máquina é obrigatório')}`);
-  }
-
-  let dataParsed;
-  try {
-    dataParsed = parseMaquinaForm(fd);
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Erro interno do servidor';
-    redirect(`/maquinas/${id}/edit?error=${enc(msg)}`);
-  }
-
-  const supabase = createClient();
-  const clinica_id = await requireCurrentClinicId();
-
-  // Verificar existência e permissão
-  const { data: existing, error: fetchError } = await supabase
-    .from('maquinas')
-    .select('id')
-    .eq('id', id)
-    .eq('clinica_id', clinica_id)
-    .single();
-
-  if (fetchError || !existing) {
-    redirect(`/maquinas?error=${enc('Máquina não encontrada ou sem permissão de acesso')}`);
-  }
-
-  // Evitar duplicidade de identificador ao atualizar
-  const { data: dup, error: dupErr } = await supabase
-    .from('maquinas')
-    .select('id')
-    .eq('clinica_id', clinica_id)
-    .eq('identificador', dataParsed!.identificador)
-    .neq('id', id)
-    .limit(1);
-
-  if (dupErr) {
-    redirect(`/maquinas/${id}/edit?error=${enc('Falha ao validar identificador')}`);
-  }
-  if (dup && dup.length > 0) {
-    redirect(`/maquinas/${id}/edit?error=${enc('Já existe uma máquina com este identificador nesta clínica')}`);
+  if (!validatedFields.success) {
+    redirect('/maquinas/new?error=' + encodeURIComponent('Dados inválidos'));
   }
 
   const { error } = await supabase
     .from('maquinas')
-    .update({
-      ...dataParsed!,
-      numero_serie: dataParsed!.numero_serie || null,
-    })
-    .eq('id', id)
-    .eq('clinica_id', clinica_id);
+    .insert([validatedFields.data]);
 
   if (error) {
-    let msg = 'Falha ao atualizar máquina';
-    if (error.code === '23505') msg = 'Identificador já existe nesta clínica';
-    else if (error.code === '23503') msg = 'Dados de referência inválidos';
-    else if (error.message) msg = `Erro: ${error.message}`;
-    redirect(`/maquinas/${id}/edit?error=${enc(msg)}`);
+    console.error('Erro ao criar máquina:', error);
+    redirect('/maquinas/new?error=' + encodeURIComponent(error.message));
   }
 
   revalidatePath('/maquinas');
-  revalidatePath(`/maquinas/${id}`);
-  redirect(`/maquinas?ok=${enc('Máquina atualizada com sucesso!')}`);
+  redirect('/maquinas?success=' + encodeURIComponent('Máquina criada com sucesso'));
+}
+
+export async function updateMaquina(id: string, formData: FormData) {
+  const supabase = createClient();
+  
+  const validatedFields = maquinaSchema.safeParse({
+    identificador: formData.get('identificador'),
+    modelo: formData.get('modelo'),
+    numero_serie: formData.get('numero_serie'),
+    sala_id: formData.get('sala_id'),
+    status: formData.get('status'),
+  });
+
+  if (!validatedFields.success) {
+    redirect(`/maquinas/${id}/edit?error=` + encodeURIComponent('Dados inválidos'));
+  }
+
+  const { error } = await supabase
+    .from('maquinas')
+    .update(validatedFields.data)
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao atualizar máquina:', error);
+    redirect(`/maquinas/${id}/edit?error=` + encodeURIComponent(error.message));
+  }
+
+  revalidatePath('/maquinas');
+  redirect('/maquinas?success=' + encodeURIComponent('Máquina atualizada com sucesso'));
 }
 
 export async function deleteMaquina(id: string) {
-  if (!id) {
-    redirect(`/maquinas?error=${enc('ID da máquina é obrigatório')}`);
-  }
-
   const supabase = createClient();
-  const clinica_id = await requireCurrentClinicId();
+  
+  // Verificar se a máquina está sendo usada em sessões
+  const { data: sessoes } = await supabase
+    .from('sessoes')
+    .select('id')
+    .eq('maquina_id', id)
+    .limit(1);
 
-  // Verificar existência
-  const { data: existing, error: fetchError } = await supabase
-    .from('maquinas')
-    .select('id, identificador')
-    .eq('id', id)
-    .eq('clinica_id', clinica_id)
-    .single();
-
-  if (fetchError || !existing) {
-    redirect(`/maquinas?error=${enc('Máquina não encontrada ou sem permissão de acesso')}`);
+  if (sessoes && sessoes.length > 0) {
+    redirect('/maquinas?error=' + encodeURIComponent('Não é possível excluir uma máquina que possui sessões associadas'));
   }
 
-  // Opcional: verificar dependências (sessoes_hemodialise, escala_pacientes)
-  // Aqui apenas executamos desativação (soft delete)
   const { error } = await supabase
     .from('maquinas')
-    .update({ ativa: false })
-    .eq('id', id)
-    .eq('clinica_id', clinica_id);
+    .delete()
+    .eq('id', id);
 
   if (error) {
-    let msg = 'Falha ao desativar máquina';
-    if (error.message) msg = `Erro: ${error.message}`;
-    redirect(`/maquinas?error=${enc(msg)}`);
+    console.error('Erro ao deletar máquina:', error);
+    redirect('/maquinas?error=' + encodeURIComponent(error.message));
   }
 
   revalidatePath('/maquinas');
-  redirect(`/maquinas?ok=${enc(`Máquina "${existing.identificador}" desativada com sucesso!`)}`);
+  redirect('/maquinas?success=' + encodeURIComponent('Máquina excluída com sucesso'));
 }

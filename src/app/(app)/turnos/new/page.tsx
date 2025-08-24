@@ -1,84 +1,257 @@
-import { createClient } from '@/lib/supabase-server';
-import { getCurrentClinicId } from '@/lib/get-clinic';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { Clock } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createTurno } from '../_actions';
 import { Button } from '@/components/ui/Button';
-
-export const dynamic = 'force-dynamic';
-
-async function createTurno(fd: FormData) {
-  'use server';
-  const supabase = createClient();
-  const clinica_id = await getCurrentClinicId();
-  const nome = String(fd.get('nome') || '');
-  const hora_inicio = String(fd.get('hora_inicio') || '06:00');
-  const hora_fim = String(fd.get('hora_fim') || '10:00');
-  const dias = String(fd.get('dias_semana') || '');
-  const dias_semana = dias
-    .split(',')
-    .map((s) => s.trim().toUpperCase())
-    .filter(Boolean);
-
-  const { error } = await supabase.from('turnos').insert({
-    clinica_id,
-    nome,
-    hora_inicio,
-    hora_fim,
-    dias_semana,
-  });
-
-  const ok = !error ? 'Turno criado com sucesso' : '';
-  const err = error ? encodeURIComponent(error.message) : '';
-  const params = ok ? `?ok=${encodeURIComponent(ok)}` : err ? `?error=${err}` : '';
-  redirect(`/turnos${params}`);
-}
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
+import { Clock, ArrowLeft, Timer, Calendar } from 'lucide-react';
 
 export default function NovoTurnoPage() {
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-            <Clock className="w-8 h-8 mr-3 text-blue-500" />
-            Novo Turno
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Adicione um novo turno de diálise ao sistema
-          </p>
-        </div>
-        <Link href="/turnos" className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-neutral-700 hover:bg-neutral-50">
-          Voltar
-        </Link>
-      </div>
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isModalOpen, setIsModalOpen] = useState(true);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
-      <Card variant="elevated" className="max-w-2xl">
-        <form action={createTurno} className="p-6 grid gap-6 md:grid-cols-2">
-          <div className="grid gap-1.5 md:col-span-2">
-            <label className="text-sm text-neutral-700">Nome</label>
-            <input className="input border rounded-md px-3 py-2" name="nome" placeholder="Nome do turno" required />
+  const diasSemana = [
+    { value: 'segunda', label: 'Segunda-feira', short: 'Seg' },
+    { value: 'terca', label: 'Terça-feira', short: 'Ter' },
+    { value: 'quarta', label: 'Quarta-feira', short: 'Qua' },
+    { value: 'quinta', label: 'Quinta-feira', short: 'Qui' },
+    { value: 'sexta', label: 'Sexta-feira', short: 'Sex' },
+    { value: 'sabado', label: 'Sábado', short: 'Sáb' },
+    { value: 'domingo', label: 'Domingo', short: 'Dom' },
+  ];
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+
+    const formData = new FormData(e.currentTarget);
+    
+    // Validação básica
+    const nome = formData.get('nome') as string;
+    const horaInicio = formData.get('hora_inicio') as string;
+    const horaFim = formData.get('hora_fim') as string;
+    
+    const newErrors: Record<string, string> = {};
+    
+    if (!nome?.trim()) {
+      newErrors.nome = 'Nome é obrigatório';
+    }
+    
+    if (!horaInicio) {
+      newErrors.hora_inicio = 'Hora de início é obrigatória';
+    }
+    
+    if (!horaFim) {
+      newErrors.hora_fim = 'Hora de fim é obrigatória';
+    }
+    
+    if (horaInicio && horaFim && horaInicio >= horaFim) {
+      newErrors.hora_fim = 'Hora de fim deve ser posterior à hora de início';
+    }
+    
+    if (selectedDays.length === 0) {
+      newErrors.dias_semana = 'Selecione pelo menos um dia da semana';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
+    
+    // Adicionar dias selecionados ao FormData
+    selectedDays.forEach(day => {
+      formData.append('dias_semana', day);
+    });
+    
+    try {
+      await createTurno(formData);
+      // A função createTurno faz redirect automaticamente em caso de sucesso
+    } catch (error) {
+      setErrors({ submit: 'Erro ao criar turno. Tente novamente.' });
+      setLoading(false);
+    }
+  }
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+    router.push('/turnos');
+  };
+
+  const handleDayToggle = (day: string) => {
+    setSelectedDays(prev => 
+      prev.includes(day) 
+        ? prev.filter(d => d !== day)
+        : [...prev, day]
+    );
+  };
+
+  const formContent = (
+    <Card className="border-0 shadow-none">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5 text-primary-600" />
+          Novo Turno
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Grid de campos principais */}
+          <div className="grid grid-cols-1 gap-6">
+            {/* Nome */}
+            <div className="space-y-2">
+              <Label htmlFor="nome" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Nome do Turno
+              </Label>
+              <Input
+                id="nome"
+                name="nome"
+                placeholder="Ex: Manhã, Tarde, Noite"
+                error={errors.nome}
+                required
+              />
+            </div>
+
+            {/* Horários */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="hora_inicio" className="flex items-center gap-2">
+                  <Timer className="h-4 w-4" />
+                  Hora de Início
+                </Label>
+                <Input
+                  id="hora_inicio"
+                  name="hora_inicio"
+                  type="time"
+                  error={errors.hora_inicio}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hora_fim" className="flex items-center gap-2">
+                  <Timer className="h-4 w-4" />
+                  Hora de Fim
+                </Label>
+                <Input
+                  id="hora_fim"
+                  name="hora_fim"
+                  type="time"
+                  error={errors.hora_fim}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Dias da Semana */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Dias da Semana
+              </Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {diasSemana.map((dia) => (
+                  <label
+                    key={dia.value}
+                    className={`
+                      flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors
+                      ${
+                        selectedDays.includes(dia.value)
+                          ? 'bg-primary-50 border-primary-200 text-primary-700'
+                          : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={selectedDays.includes(dia.value)}
+                      onChange={() => handleDayToggle(dia.value)}
+                    />
+                    <span className="text-sm font-medium">{dia.short}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.dias_semana && (
+                <div className="text-red-600 text-sm">{errors.dias_semana}</div>
+              )}
+            </div>
           </div>
-          <div className="grid gap-1.5">
-            <label className="text-sm text-neutral-700">Hora início</label>
-            <input className="input border rounded-md px-3 py-2" name="hora_inicio" type="time" defaultValue="06:00" />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-sm text-neutral-700">Hora fim</label>
-            <input className="input border rounded-md px-3 py-2" name="hora_fim" type="time" defaultValue="10:00" />
-          </div>
-          <div className="grid gap-1.5 md:col-span-2">
-            <label className="text-sm text-neutral-700">Dias da semana</label>
-            <input className="input border rounded-md px-3 py-2" name="dias_semana" placeholder="Ex.: SEG,QUA,SEX" />
-          </div>
-          <div className="pt-2 md:col-span-2">
-            <Button className="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700" type="submit">
-              Salvar
+
+          {/* Erro geral */}
+          {errors.geral && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="text-red-800 text-sm font-medium">
+                {errors.geral}
+              </div>
+            </div>
+          )}
+
+          {/* Botões */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              loading={loading}
+              disabled={loading}
+            >
+              {loading ? 'Criando...' : 'Criar Turno'}
             </Button>
           </div>
         </form>
-      </Card>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/turnos')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
+              </Button>
+              <div className="h-6 w-px bg-gray-300" />
+              <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Novo Turno
+              </h1>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Modal isOpen={isModalOpen} onClose={handleClose} size="lg">
+          {formContent}
+        </Modal>
+      </div>
     </div>
   );
 }
