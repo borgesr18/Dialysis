@@ -104,8 +104,8 @@ async function checkTabelas() {
           sala_id: sala.id,
           turno_id: turno.id,
           maquina_id: maquinas && maquinas.length > 0 ? maquinas[i % maquinas.length].id : null,
-          dias_semana: ['SEG', 'QUA', 'SEX'], // Segunda, Quarta, Sexta
-          observacao: `Escala de exemplo para ${paciente.nome_completo}`
+          dias_semana: [1, 3, 5], // Segunda, Quarta, Sexta
+          observacoes: `Escala de exemplo para ${paciente.nome_completo}`
         });
       }
       

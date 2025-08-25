@@ -221,8 +221,8 @@ async function seedData() {
         sala_id: sala.id,
         turno_id: turno.id,
         maquina_id: maquina?.id || null,
-        dias_semana: index % 2 === 0 ? ['SEG', 'QUA', 'SEX'] : ['TER', 'QUI', 'SAB'],
-        observacao: `Escala regular para ${paciente.nome_completo}`
+        dias_semana: index % 2 === 0 ? [1, 3, 5] : [2, 4, 6],
+        observacoes: `Escala regular para ${paciente.nome_completo}`
       });
     });
     
