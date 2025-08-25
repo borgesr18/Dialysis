@@ -87,7 +87,7 @@ export default function EscalaPacientes() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<EscalaPaciente | null>(null);
-  const { clinicId } = useAuth();
+  const { clinicId, initialized } = useAuth();
   
   // Filtros
   const [filtroSala, setFiltroSala] = useState('');
@@ -96,10 +96,13 @@ export default function EscalaPacientes() {
   const [filtroData, setFiltroData] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   useEffect(() => {
+    if (!initialized) return;
     if (clinicId) {
       carregarDados();
+    } else {
+      setLoading(false);
     }
-  }, [clinicId]);
+  }, [clinicId, initialized]);
 
   const supabase = createClient();
 
