@@ -112,13 +112,41 @@ export default function EscalaPacientes() {
         return;
       }
       
-      // Carregar dados em paralelo
-      const [pacientesRes, salasRes, turnosRes, maquinasRes, escalaRes] = await Promise.all([
+      // Carregar listas base em paralelo e tratar erros individualmente
+      const [pacientesRes, salasRes, turnosRes, maquinasRes] = await Promise.all([
         supabase.from('pacientes').select('id, nome_completo, registro, telefone').eq('clinica_id', clinicId).order('nome_completo'),
         supabase.from('salas').select('id, nome, descricao').eq('clinica_id', clinicId).order('nome'),
         supabase.from('turnos').select('id, nome, hora_inicio, hora_fim').eq('clinica_id', clinicId).order('hora_inicio'),
-        supabase.from('maquinas').select('id, identificador, modelo, ativa, sala_id').eq('clinica_id', clinicId).order('identificador'),
-        supabase
+        supabase.from('maquinas').select('id, identificador, modelo, ativa, sala_id').eq('clinica_id', clinicId).order('identificador')
+      ]);
+
+      if (pacientesRes.error) console.error('Erro ao carregar pacientes:', pacientesRes.error);
+      if (salasRes.error) console.error('Erro ao carregar salas:', salasRes.error);
+      if (turnosRes.error) console.error('Erro ao carregar turnos:', turnosRes.error);
+      if (maquinasRes.error) console.error('Erro ao carregar máquinas:', maquinasRes.error);
+
+      const pacientesMapeados = (pacientesRes.data || []).map((p: any) => ({
+        id: p.id,
+        nome: p.nome_completo,
+        registro: p.registro,
+        telefone: p.telefone
+      }));
+      const maquinasMapeadas = (maquinasRes.data || []).map((m: any) => ({
+        id: m.id,
+        numero: m.identificador,
+        sala_id: m.sala_id,
+        status: m.ativa,
+        modelo: m.modelo
+      }));
+
+      setPacientes(pacientesMapeados);
+      setSalas(salasRes.data || []);
+      setTurnos(turnosRes.data || []);
+      setMaquinas(maquinasMapeadas);
+
+      // Carregar escala com join; se falhar, não bloquear selects
+      try {
+        const escalaRes = await supabase
           .from('escala_pacientes')
           .select(`
             id,
@@ -133,54 +161,34 @@ export default function EscalaPacientes() {
             turno:turnos!inner(id, nome, hora_inicio, hora_fim),
             maquina:maquinas!inner(id, identificador, modelo, ativa, sala_id)
           `)
-          .eq('clinica_id', clinicId)
-          .order('created_at', { ascending: false })
-      ]);
+          .eq('clinica_id', clinicId);
 
-      if (pacientesRes.error) throw pacientesRes.error;
-      if (salasRes.error) throw salasRes.error;
-      if (turnosRes.error) throw turnosRes.error;
-      if (maquinasRes.error) throw maquinasRes.error;
-      if (escalaRes.error) throw escalaRes.error;
-
-      // Mapear dados para as interfaces corretas
-      const pacientesMapeados = (pacientesRes.data || []).map((p: any) => ({
-        id: p.id,
-        nome: p.nome_completo,
-        registro: p.registro,
-        telefone: p.telefone
-      }));
-      
-      const maquinasMapeadas = (maquinasRes.data || []).map((m: any) => ({
-        id: m.id,
-        numero: m.identificador,
-        sala_id: m.sala_id,
-        status: m.ativa,
-        modelo: m.modelo
-      }));
-      
-      const escalaMapeada = (escalaRes.data || []).map((e: any) => ({
-        ...e,
-        paciente: {
-          id: e.paciente.id,
-          nome: e.paciente.nome_completo,
-          registro: e.paciente.registro,
-          telefone: e.paciente.telefone
-        },
-        maquina: {
-          id: e.maquina.id,
-          numero: e.maquina.identificador,
-          sala_id: e.maquina.sala_id,
-          status: e.maquina.ativa,
-          modelo: e.maquina.modelo
+        if (escalaRes.error) {
+          console.warn('Aviso: falha ao carregar escala. Continuando sem escala.', escalaRes.error);
+          setEscala([]);
+        } else {
+          const escalaMapeada = (escalaRes.data || []).map((e: any) => ({
+            ...e,
+            paciente: {
+              id: e.paciente.id,
+              nome: e.paciente.nome_completo,
+              registro: e.paciente.registro,
+              telefone: e.paciente.telefone
+            },
+            maquina: {
+              id: e.maquina.id,
+              numero: e.maquina.identificador,
+              sala_id: e.maquina.sala_id,
+              status: e.maquina.ativa,
+              modelo: e.maquina.modelo
+            }
+          }));
+          setEscala(escalaMapeada);
         }
-      }));
-      
-      setPacientes(pacientesMapeados);
-      setSalas(salasRes.data || []);
-      setTurnos(turnosRes.data || []);
-      setMaquinas(maquinasMapeadas);
-      setEscala(escalaMapeada);
+      } catch (e) {
+        console.warn('Aviso: erro inesperado ao carregar escala.', e);
+        setEscala([]);
+      }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados da escala');
