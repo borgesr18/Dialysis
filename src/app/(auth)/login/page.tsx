@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { login } from '@/app/_actions/auth'
+import { login, type LoginResult } from '@/app/_actions/auth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -19,7 +19,10 @@ export default function LoginPage() {
     setError('')
 
     try {
-      await login(formData)
+      const result = (await login(formData)) as LoginResult | void
+      if (result && 'ok' in result && result.ok === false) {
+        setError(result.error)
+      }
     } catch (err: any) {
       setError(err.message || 'Erro inesperado. Tente novamente.')
     } finally {

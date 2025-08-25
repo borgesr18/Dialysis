@@ -4,7 +4,12 @@ import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
-export async function login(formData: FormData) {
+// Retorno estruturado para evitar erro genérico em produção ao lançar exceções
+type LoginSuccess = { ok: true }
+type LoginFailure = { ok: false; error: string }
+export type LoginResult = LoginSuccess | LoginFailure
+
+export async function login(formData: FormData): Promise<LoginResult | void> {
   const supabase = createClient()
 
   const data = {
@@ -15,7 +20,16 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    throw new Error(error.message)
+    let message = 'Erro ao fazer login. Tente novamente.'
+    const raw = (error.message || '').toLowerCase()
+    if (raw.includes('invalid login credentials')) {
+      message = 'E-mail ou senha incorretos.'
+    } else if (raw.includes('email not confirmed')) {
+      message = 'Confirme seu e-mail antes de fazer login.'
+    } else if (raw.includes('too many requests')) {
+      message = 'Muitas tentativas. Tente novamente em alguns minutos.'
+    }
+    return { ok: false, error: message }
   }
 
   revalidatePath('/', 'layout')
