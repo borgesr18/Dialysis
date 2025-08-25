@@ -46,8 +46,8 @@ interface EscalaPaciente {
   sala_id: string;
   turno_id: string;
   maquina_id: string;
-  dias_semana: string[];
-  observacao?: string;
+  dias_semana: number[];
+  observacoes?: string;
 }
 
 interface FormularioEscalaProps {
@@ -62,13 +62,13 @@ interface FormularioEscalaProps {
 }
 
 const DIAS_SEMANA = [
-  { value: '1', label: 'Segunda-feira' },
-  { value: '2', label: 'Terça-feira' },
-  { value: '3', label: 'Quarta-feira' },
-  { value: '4', label: 'Quinta-feira' },
-  { value: '5', label: 'Sexta-feira' },
-  { value: '6', label: 'Sábado' },
-  { value: '0', label: 'Domingo' }
+  { value: 1, label: 'Segunda-feira' },
+  { value: 2, label: 'Terça-feira' },
+  { value: 3, label: 'Quarta-feira' },
+  { value: 4, label: 'Quinta-feira' },
+  { value: 5, label: 'Sexta-feira' },
+  { value: 6, label: 'Sábado' },
+  { value: 0, label: 'Domingo' }
 ];
 
 export default function FormularioEscala({
@@ -87,7 +87,7 @@ export default function FormularioEscala({
     turno_id: '',
     maquina_id: '',
     dias_semana: [],
-    observacao: ''
+    observacoes: ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -102,7 +102,7 @@ export default function FormularioEscala({
         turno_id: editingItem.turno_id,
         maquina_id: editingItem.maquina_id,
         dias_semana: editingItem.dias_semana || [],
-        observacao: editingItem.observacao || ''
+        observacoes: editingItem.observacoes || ''
       });
     } else {
       setFormData({
@@ -111,7 +111,7 @@ export default function FormularioEscala({
         turno_id: '',
         maquina_id: '',
         dias_semana: [],
-        observacao: ''
+        observacoes: ''
       });
     }
     setErrors({});
@@ -215,7 +215,7 @@ export default function FormularioEscala({
         turno_id: formData.turno_id,
         maquina_id: formData.maquina_id,
         dias_semana: formData.dias_semana,
-        observacao: formData.observacao || null,
+        observacoes: formData.observacoes || null,
         clinica_id: clinicId
       };
 
@@ -247,7 +247,7 @@ export default function FormularioEscala({
     }
   };
 
-  const handleDiaChange = (dia: string, checked: boolean) => {
+  const handleDiaChange = (dia: number, checked: boolean) => {
     if (checked) {
       setFormData(prev => ({
         ...prev,
@@ -422,7 +422,7 @@ export default function FormularioEscala({
               {DIAS_SEMANA.map(dia => (
                 <Checkbox
                   key={dia.value}
-                  id={dia.value}
+                  id={String(dia.value)}
                   checked={formData.dias_semana.includes(dia.value)}
                   onChange={(checked: boolean) => handleDiaChange(dia.value, checked)}
                   label={dia.label}
@@ -440,8 +440,8 @@ export default function FormularioEscala({
               Observação
             </label>
             <Textarea
-              value={formData.observacao}
-              onChange={(e) => setFormData(prev => ({ ...prev, observacao: e.target.value }))}
+              value={formData.observacoes}
+              onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
               placeholder="Observações adicionais..."
               rows={3}
             />

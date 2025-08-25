@@ -60,8 +60,8 @@ interface EscalaPaciente {
   sala_id: string;
   turno_id: string;
   maquina_id: string;
-  dias_semana: string[];
-  observacao?: string;
+  dias_semana: number[];
+  observacoes?: string;
   paciente: Paciente;
   sala: Sala;
   turno: Turno;
@@ -69,13 +69,13 @@ interface EscalaPaciente {
 }
 
 const DIAS_SEMANA = [
-  { value: '1', label: 'Segunda' },
-  { value: '2', label: 'Terça' },
-  { value: '3', label: 'Quarta' },
-  { value: '4', label: 'Quinta' },
-  { value: '5', label: 'Sexta' },
-  { value: '6', label: 'Sábado' },
-  { value: '0', label: 'Domingo' }
+  { value: 1, label: 'Segunda' },
+  { value: 2, label: 'Terça' },
+  { value: 3, label: 'Quarta' },
+  { value: 4, label: 'Quinta' },
+  { value: 5, label: 'Sexta' },
+  { value: 6, label: 'Sábado' },
+  { value: 0, label: 'Domingo' }
 ];
 
 export default function EscalaPacientes() {
@@ -127,7 +127,7 @@ export default function EscalaPacientes() {
             turno_id,
             maquina_id,
             dias_semana,
-            observacao,
+            observacoes,
             paciente:pacientes!inner(id, nome_completo, registro, telefone),
             sala:salas!inner(id, nome, descricao),
             turno:turnos!inner(id, nome, hora_inicio, hora_fim),
@@ -197,7 +197,7 @@ export default function EscalaPacientes() {
       item.paciente.registro.toLowerCase().includes(filtroPaciente.toLowerCase());
     
     // Verificar se o paciente tem sessão no dia filtrado
-    const diaSemana = new Date(filtroData).getDay().toString();
+    const diaSemana = new Date(filtroData).getDay();
     const matchData = item.dias_semana.includes(diaSemana);
     
     return matchSala && matchTurno && matchPaciente && matchData;
@@ -224,7 +224,7 @@ export default function EscalaPacientes() {
     );
   };
 
-  const getDiaSemanaNome = (dia: string) => {
+  const getDiaSemanaNome = (dia: number) => {
     return DIAS_SEMANA.find(d => d.value === dia)?.label || dia;
   };
 
