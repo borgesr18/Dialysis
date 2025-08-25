@@ -10,7 +10,7 @@
  * Execução: node test-pacientes-crud.js
  */
 
-const baseUrl = 'http://localhost:3000';
+const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
 
 // Dados de teste para criação de paciente
 const dadosTestePaciente = {
