@@ -2,6 +2,39 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // Rewrites para submissões de formulários (quando NÃO são Server Actions)
+  // Mantém compatibilidade com POST direto para rotas de páginas
+  try {
+    if (request.method === 'POST') {
+      const { pathname } = request.nextUrl;
+      const isServerAction =
+        request.headers.has('next-action') ||
+        request.headers.has('next-router-state-tree') ||
+        request.headers.get('content-type')?.includes('multipart/form-data') === true;
+
+      if (!isServerAction) {
+        if (pathname === '/pacientes/new') {
+          const url = new URL('/api/pacientes/new', request.url);
+          return NextResponse.rewrite(url);
+        }
+
+        const editMatch = pathname.match(/^\/pacientes\/([^/]+)\/edit$/);
+        if (editMatch) {
+          const id = editMatch[1];
+          const url = new URL(`/api/pacientes/${id}/edit`, request.url);
+          return NextResponse.rewrite(url);
+        }
+
+        if (pathname === '/pacientes') {
+          const url = new URL('/api/pacientes', request.url);
+          return NextResponse.rewrite(url);
+        }
+      }
+    }
+  } catch (_) {
+    // Em caso de erro nos rewrites, seguir fluxo normal do middleware
+  }
+
   // Validação de variáveis de ambiente
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
